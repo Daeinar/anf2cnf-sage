@@ -18,10 +18,20 @@ from sage.sat.converters import ANF2CNFConverter
 class SageCNFEncoder(ANF2CNFConverter):
   """
   ANF to CNF converter supporting different conversion strategies.
+
+  INPUT:
+
+  - ``solver`` - a SAT-solver instance.
+  - ``ring`` - a :cls:`BooleanPolynomialRing`.
+  - ``use_xor_clauses`` - boolean (default: ``False``) use XOR clauses. If
+    ``True`` use only if ``solver`` supports it. 
+  - ``cutting_number`` - integer (default: 4) maximum length of XOR chains after
+    splitting if XOR clauses are not supported.  Supported values are 3,...,6.
+
   """
-  def __init__(self, solver, ring, use_xor_clauses=None, cutting_number=4):
+  def __init__(self, solver, ring, use_xor_clauses=False, cutting_number=4):
     if (cutting_number not in xrange(3,7)): 
-      raise ValueError("Please submit a valid cutting number: cutting_number \in {3,...,6}.") 
+      raise ValueError("Please submit a valid cutting_number \in {3,...,6}.") 
 
     self.create_subpolys = {"SS": self.p_ss, "LPS": self.p_lps, \
         "DPS": self.p_dps, "QPS": self.p_qps, "CPS": self.p_cps}
@@ -46,16 +56,42 @@ class SageCNFEncoder(ANF2CNFConverter):
     Encode the boolean polynomials in ``F`` using the quadratic substitution
     strategy ``qstrategy``and the cubic substitution strategy ``cstrategy``.
     Monomials of degree > 3 are substituted using the standard strategy.
+
+    INPUT:
+    
+    - ``F`` - list of :cls:`BooleanPolynomial`s.
+    - ``qstrategy`` - string (default: "SS") sets the quadratic substitution
+      strategy that should be used. 
+    - ``cstrategy`` - string (default: "SS") sets the cubic substitution
+      strategy that should be used. 
+
     """
     for f in F:
       self.clauses_strategy(f,qstrategy,cstrategy)
     return self.phi()
   
   def var(self, m=None, decision=None):
+    """
+    Return a *new* variable.
+
+    This is a thin wrapper around the SAT-solvers function where
+    we keep track of which SAT variable corresponds to which
+    monomial.
+
+    INPUT:
+
+    - ``m`` - something the new variables maps to, usually a monomial or
+      polynomial.
+    - ``decision`` - is this variable a deicison variable?
+
+    """
     self._phi.append(m)
     return self.solver.var(decision=decision)
 
   def phi(self):
+    """
+    Map SAT variables to polynomial variables.
+    """
     return(self._phi)
 
   def clauses_strategy(self, f, qstrategy="SS", cstrategy="SS"):
@@ -63,6 +99,15 @@ class SageCNFEncoder(ANF2CNFConverter):
     Convert ``f`` using the quadratic substitution strategy ``qstrategy``and the
     cubic substitution strategy ``cstrategy``. Monomials of degree > 3 are
     substituted using the standard strategy.
+
+    INPUT:
+
+    - ``f`` - a :cls:`BooleanPolynomial`.
+    - ``qstrategy`` - string (default: "SS") sets the quadratic substitution
+      strategy that should be used. 
+    - ``cstrategy`` - string (default: "SS") sets the cubic substitution
+      strategy that should be used. 
+
     """
     if (qstrategy not in ["SS","LPS","DPS","QPS"]): 
       raise ValueError("Please submit a valid substitution strategy for quadratic monomial. Supported values are qstrategy = SS, LPS, DPS, QPS") 
@@ -92,6 +137,14 @@ class SageCNFEncoder(ANF2CNFConverter):
     """
     Splits the polynomial ``f`` into its homogeneous parts and returns it as a
     dictionary.
+
+    INPUT:
+
+    - ``f`` - a :cls:`BooleanPolynomial`.
+
+    OUTPUT: A dictionary h, where h[deg] returns a list containing all the
+    monomials m of f where m.deg() == deg.
+
     """
     h = {}
     for m in f:
@@ -103,9 +156,16 @@ class SageCNFEncoder(ANF2CNFConverter):
 
   def substitute(self,f,strategy):
     """
-    Checks if the polynomial f was substituted before, if not, a new variable
-    is introduced and the clauses for f are added to the solver.
-    Output: Substitution variable.
+    Checks if the polynomial ``f`` was substituted before, if not, a new variable
+    is introduced and the clauses for ``f`` are added to the solver.
+
+    INPUT:
+
+    - ``f`` - a :cls:`BooleanPolynomial`.
+    - ``strategy`` - string that identifies the used substitution strategy.
+
+    OUTPUT: An index for a SAT variable corresponding to ``f``.
+
     """
     if f not in self.phi():
       self.create_clauses[strategy](f,self.var(f))
@@ -114,12 +174,30 @@ class SageCNFEncoder(ANF2CNFConverter):
   def p_ss(self,m,hom_parts):
     """
     Manages the Standard Substitution.
+
+    INPUT:
+
+    - ``m`` - a monomial.
+    - ``hom_parts`` - dicitionary that contains all the (remaining) monomials of
+      the currently processed polynomial.
+
+    OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
+
     """
     return self.substitute(m,"SS")
     
   def p_lps(self,m,hom_parts):
     """
     Manages the Linear Partner Substitution.
+
+    INPUT:
+
+    - ``m`` - a monomial.
+    - ``hom_parts`` - dicitionary that contains all the (remaining) monomials of
+      the currently processed polynomial.
+
+    OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
+
     """
     if 1 in hom_parts.keys():
       v = m.variables()
@@ -134,6 +212,15 @@ class SageCNFEncoder(ANF2CNFConverter):
   def p_dps(self,m,hom_parts):
     """
     Manages the Double Partner Substitution.
+
+    INPUT:
+
+    - ``m`` - a monomial.
+    - ``hom_parts`` - dicitionary that contains all the (remaining) monomials of
+      the currently processed polynomial.
+
+    OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
+
     """
     if 0 in hom_parts.keys() and 1 in hom_parts.keys():
       v = m.variables()
@@ -148,6 +235,15 @@ class SageCNFEncoder(ANF2CNFConverter):
   def p_qps(self,m,hom_parts):
     """
     Manages the Quadratic Partner Substitution.
+
+    INPUT:
+
+    - ``m`` - a monomial.
+    - ``hom_parts`` - dicitionary that contains all the (remaining) monomials of
+      the currently processed polynomial.
+
+    OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
+
     """
     for t in hom_parts[2]:
       x = gcd(m,t)
@@ -159,6 +255,15 @@ class SageCNFEncoder(ANF2CNFConverter):
   def p_cps(self,m,hom_parts):
     """
     Manages the Cubic Partner Substitution.
+
+    INPUT:
+
+    - ``m`` - a monomial.
+    - ``hom_parts`` - dicitionary that contains all the (remaining) monomials of
+      the currently processed polynomial.
+
+    OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
+
     """
     for t in hom_parts[3]:
       x = gcd(m,t)
@@ -171,6 +276,11 @@ class SageCNFEncoder(ANF2CNFConverter):
     """
     Clauses for Standard Substitution:
     x[1]*...*x[n] + y <=> (x[1] | -y) & ... & (x[n] | -y) & (-x[1] | ... | -x[n] | y)
+
+    INPUT:
+    - ``f`` - a :cls:`BooleanPolynomial`.
+    - ``v`` - boolean variable that was used for substituting ``f``.
+
     """
     l = []
     t = [self.phi().index(x) for x in f.variables()]
@@ -183,6 +293,11 @@ class SageCNFEncoder(ANF2CNFConverter):
     """
     Clauses for Linear Partner Substitution:
     x[1]*x[2] + x[1] + y <=> (x[1] | -y) & (-x[2] | -y) & (-x[1] | x[2] | y)
+
+    INPUT:
+    - ``f`` - a :cls:`BooleanPolynomial`
+    - ``v`` - boolean variable that was used for substituting ``f``.
+
     """
     p = self.phi().index(f-f.lm())
     q = self.phi().index(f.lm()/(f-f.lm()))
@@ -194,6 +309,11 @@ class SageCNFEncoder(ANF2CNFConverter):
     """
     Clauses for Double Partner Substitution:
     x[1]*x[2] + x[1] + x[2] + 1 + y <=> (-x[1] | -y) & (-x[2] | -y) & (x[1] | x[2] | y)
+
+    INPUT:
+    - ``f`` - a :cls:`BooleanPolynomial`.
+    - ``v`` - boolean variable that was used for substituting ``f``.
+
     """
     w = f.variables()
     self.solver.add_clause((-self.phi().index(w[0]),-v))
@@ -206,6 +326,11 @@ class SageCNFEncoder(ANF2CNFConverter):
     x[1]*x[2] + x[1]*x[3] + y <=> 
     (x[1] | -y) & (x[2] | x[3] | -y) & (-x[2] | -x[3] | -y) &
     (-x[1] | -x[2] | x[3] | y) & (-x[1] | x[2] | -x[3] | y)
+
+    INPUT:
+    - ``f`` - a :cls:`BooleanPolynomial`.
+    - ``v`` - boolean variable that was used for substituting ``f``.
+
     """
     t = list(f)
     p = self.phi().index(gcd(t[0],t[1]))
@@ -223,6 +348,12 @@ class SageCNFEncoder(ANF2CNFConverter):
     x[1]*x[2]*x[3] + x[1]*x[2]*x[4] + y <=>
     (x[1] | -y) & (x[2] | -y) & (x[3] | x[4] | -y) & (-x[3] | -x[4] | -y) & 
     (-x[1] | -x[2] | -x[3] | x[4] | y) & (-x[1] | -x[2] | x[3] | -x[4] | y) 
+
+    INPUT:
+
+    - ``f`` - a :cls:`BooleanPolynomial`.
+    - ``v`` - boolean variable that was used for substituting ``f``.
+
     """
     t = list(f)
     p = [self.phi().index(x) for x in gcd(t[0],t[1]).variables()]
@@ -240,6 +371,11 @@ class SageCNFEncoder(ANF2CNFConverter):
     """
     Converts the linearized polynomial ``f`` to its logical representation
     either with normal CNF or XOR clauses.
+
+    INPUT:
+
+    - ``f`` - list of index integers representing the linearized polynomial.
+
     """
     equal_zero = True
     if 0 in f:
@@ -257,7 +393,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       else:
         l = [f]
       clauses = []
-      for i in range(len(l)):
+      for i in xrange(len(l)):
         if i == len(l) - 1 and not equal_zero:
           clauses += self.c_lin_cnf(l[i],equal_zero)
         else:
@@ -269,6 +405,15 @@ class SageCNFEncoder(ANF2CNFConverter):
     """
     Splits the linearized polynomial ``f`` which is larger than the cutting
     number into smaller ones by introducing new variables.
+
+    INPUT:
+
+    - ``f`` - list of index integers representing the linearized polynomial.
+
+    OUTPUT: list of lists where every of the inner lists represents a polynomial
+    g (with len(support(g) <= cutting_number) that was broken off the polynomial
+    ``f``. 
+
     """
     c = self.cutting_number
     l = []
@@ -286,155 +431,163 @@ class SageCNFEncoder(ANF2CNFConverter):
         break
     return l
 
-  def c_lin_cnf(self,t,equal_zero):
+  def c_lin_cnf(self,f,equal_zero):
     """
     CNF clauses for a linearized polynomial.
+
+    INPUT: 
+
+    - ``f`` - list of integers represeting a linearized polynomial.
+    - ``equal_zero`` - boolean, true if f = 0 and false if f + 1 = 0.
+
+    OUTPUT: A list of clauses modeling the polynomial ``f``.
+
     """
     c = []
     if equal_zero:
-      if len(t) == 2:
+      if len(f) == 2:
         # x[1] + x[2]
-        c.append((t[0],-t[1]))
-        c.append((-t[0],t[1]))
-      elif len(t) == 3:
+        c.append((f[0],-f[1]))
+        c.append((-f[0],f[1]))
+      elif len(f) == 3:
         # x[1] + x[2] + x[3]
-        c.append((-t[0], t[1], t[2]))
-        c.append(( t[0],-t[1], t[2]))
-        c.append((-t[0], t[1],-t[2]))
-        c.append((-t[0],-t[1],-t[2]))
-      elif len(t) == 4:
+        c.append((-f[0], f[1], f[2]))
+        c.append(( f[0],-f[1], f[2]))
+        c.append((-f[0], f[1],-f[2]))
+        c.append((-f[0],-f[1],-f[2]))
+      elif len(f) == 4:
         # x[1] + x[2] + x[3] + x[4]
-        c.append((-t[0], t[1], t[2], t[3]))
-        c.append(( t[0],-t[1], t[2], t[3]))
-        c.append(( t[0], t[1],-t[2], t[3]))
-        c.append(( t[0], t[1], t[2],-t[3]))
-        c.append((-t[0],-t[1],-t[2], t[3]))
-        c.append((-t[0],-t[1], t[2],-t[3]))
-        c.append((-t[0], t[1],-t[2],-t[3]))
-        c.append(( t[0],-t[1],-t[2],-t[3]))
-      elif len(t) == 5:
+        c.append((-f[0], f[1], f[2], f[3]))
+        c.append(( f[0],-f[1], f[2], f[3]))
+        c.append(( f[0], f[1],-f[2], f[3]))
+        c.append(( f[0], f[1], f[2],-f[3]))
+        c.append((-f[0],-f[1],-f[2], f[3]))
+        c.append((-f[0],-f[1], f[2],-f[3]))
+        c.append((-f[0], f[1],-f[2],-f[3]))
+        c.append(( f[0],-f[1],-f[2],-f[3]))
+      elif len(f) == 5:
         # x[1] + x[2] + x[3] + x[4] + x[5]
-        c.append((-t[0], t[1], t[2], t[3], t[4]))
-        c.append(( t[0],-t[1], t[2], t[3], t[4]))
-        c.append(( t[0], t[1],-t[2], t[3], t[4]))
-        c.append(( t[0], t[1], t[2],-t[3], t[4]))
-        c.append(( t[0], t[1], t[2], t[3],-t[4]))
-        c.append((-t[0],-t[1],-t[2], t[3], t[4]))
-        c.append((-t[0],-t[1], t[2],-t[3], t[4]))
-        c.append((-t[0],-t[1], t[2], t[3],-t[4]))
-        c.append((-t[0], t[1],-t[2], t[3],-t[4]))
-        c.append((-t[0], t[1], t[2],-t[3],-t[4]))
-        c.append((-t[0], t[1],-t[2],-t[3], t[4]))
-        c.append(( t[0],-t[1], t[2],-t[3],-t[4]))
-        c.append(( t[0], t[1],-t[2],-t[3],-t[4]))
-        c.append(( t[0],-t[1],-t[2], t[3],-t[4]))
-        c.append(( t[0],-t[1],-t[2],-t[3], t[4]))
-        c.append((-t[0],-t[1],-t[2],-t[3],-t[4]))
-      elif len(t) == 6:
+        c.append((-f[0], f[1], f[2], f[3], f[4]))
+        c.append(( f[0],-f[1], f[2], f[3], f[4]))
+        c.append(( f[0], f[1],-f[2], f[3], f[4]))
+        c.append(( f[0], f[1], f[2],-f[3], f[4]))
+        c.append(( f[0], f[1], f[2], f[3],-f[4]))
+        c.append((-f[0],-f[1],-f[2], f[3], f[4]))
+        c.append((-f[0],-f[1], f[2],-f[3], f[4]))
+        c.append((-f[0],-f[1], f[2], f[3],-f[4]))
+        c.append((-f[0], f[1],-f[2], f[3],-f[4]))
+        c.append((-f[0], f[1], f[2],-f[3],-f[4]))
+        c.append((-f[0], f[1],-f[2],-f[3], f[4]))
+        c.append(( f[0],-f[1], f[2],-f[3],-f[4]))
+        c.append(( f[0], f[1],-f[2],-f[3],-f[4]))
+        c.append(( f[0],-f[1],-f[2], f[3],-f[4]))
+        c.append(( f[0],-f[1],-f[2],-f[3], f[4]))
+        c.append((-f[0],-f[1],-f[2],-f[3],-f[4]))
+      elif len(f) == 6:
         # x[1] + x[2] + x[3] + x[4] + x[5] + x[6]
-        c.append((-t[0], t[1], t[2], t[3], t[4], t[5]))
-        c.append(( t[0],-t[1], t[2], t[3], t[4], t[5]))
-        c.append(( t[0], t[1],-t[2], t[3], t[4], t[5]))
-        c.append(( t[0], t[1], t[2],-t[3], t[4], t[5]))
-        c.append(( t[0], t[1], t[2], t[3],-t[4], t[5]))
-        c.append(( t[0], t[1], t[2], t[3], t[4],-t[5]))
-        c.append((-t[0],-t[1],-t[2], t[3], t[4], t[5]))
-        c.append((-t[0],-t[1], t[2],-t[3], t[4], t[5]))
-        c.append((-t[0],-t[1], t[2], t[3],-t[4], t[5]))
-        c.append((-t[0],-t[1], t[2], t[3], t[4],-t[5]))
-        c.append((-t[0], t[1],-t[2],-t[3], t[4], t[5]))
-        c.append((-t[0], t[1],-t[2], t[3],-t[4], t[5]))
-        c.append((-t[0], t[1],-t[2], t[3], t[4],-t[5]))
-        c.append((-t[0], t[1], t[2],-t[3],-t[4], t[5]))
-        c.append((-t[0], t[1], t[2],-t[3], t[4],-t[5]))
-        c.append((-t[0], t[1], t[2], t[3],-t[4],-t[5]))
-        c.append(( t[0],-t[1],-t[2],-t[3], t[4], t[5]))
-        c.append(( t[0],-t[1],-t[2], t[3],-t[4], t[5]))
-        c.append(( t[0],-t[1],-t[2], t[3], t[4],-t[5]))
-        c.append(( t[0],-t[1], t[2],-t[3],-t[4], t[5]))
-        c.append(( t[0],-t[1], t[2],-t[3], t[4],-t[5]))
-        c.append(( t[0],-t[1], t[2], t[3],-t[4],-t[5]))
-        c.append(( t[0], t[1],-t[2],-t[3],-t[4], t[5]))
-        c.append(( t[0], t[1],-t[2],-t[3], t[4],-t[5]))
-        c.append((-t[0], t[1],-t[2], t[3],-t[4],-t[5]))
-        c.append((-t[0], t[1], t[2],-t[3],-t[4],-t[5]))
-        c.append((-t[0],-t[1],-t[2],-t[3],-t[4], t[5]))
-        c.append((-t[0],-t[1],-t[2],-t[3], t[4],-t[5]))
-        c.append((-t[0],-t[1],-t[2], t[3],-t[4],-t[5]))
-        c.append((-t[0],-t[1], t[2],-t[3],-t[4],-t[5]))
-        c.append((-t[0], t[1],-t[2],-t[3],-t[4],-t[5]))
-        c.append(( t[0],-t[1],-t[2],-t[3],-t[4],-t[5]))
+        c.append((-f[0], f[1], f[2], f[3], f[4], f[5]))
+        c.append(( f[0],-f[1], f[2], f[3], f[4], f[5]))
+        c.append(( f[0], f[1],-f[2], f[3], f[4], f[5]))
+        c.append(( f[0], f[1], f[2],-f[3], f[4], f[5]))
+        c.append(( f[0], f[1], f[2], f[3],-f[4], f[5]))
+        c.append(( f[0], f[1], f[2], f[3], f[4],-f[5]))
+        c.append((-f[0],-f[1],-f[2], f[3], f[4], f[5]))
+        c.append((-f[0],-f[1], f[2],-f[3], f[4], f[5]))
+        c.append((-f[0],-f[1], f[2], f[3],-f[4], f[5]))
+        c.append((-f[0],-f[1], f[2], f[3], f[4],-f[5]))
+        c.append((-f[0], f[1],-f[2],-f[3], f[4], f[5]))
+        c.append((-f[0], f[1],-f[2], f[3],-f[4], f[5]))
+        c.append((-f[0], f[1],-f[2], f[3], f[4],-f[5]))
+        c.append((-f[0], f[1], f[2],-f[3],-f[4], f[5]))
+        c.append((-f[0], f[1], f[2],-f[3], f[4],-f[5]))
+        c.append((-f[0], f[1], f[2], f[3],-f[4],-f[5]))
+        c.append(( f[0],-f[1],-f[2],-f[3], f[4], f[5]))
+        c.append(( f[0],-f[1],-f[2], f[3],-f[4], f[5]))
+        c.append(( f[0],-f[1],-f[2], f[3], f[4],-f[5]))
+        c.append(( f[0],-f[1], f[2],-f[3],-f[4], f[5]))
+        c.append(( f[0],-f[1], f[2],-f[3], f[4],-f[5]))
+        c.append(( f[0],-f[1], f[2], f[3],-f[4],-f[5]))
+        c.append(( f[0], f[1],-f[2],-f[3],-f[4], f[5]))
+        c.append(( f[0], f[1],-f[2],-f[3], f[4],-f[5]))
+        c.append((-f[0], f[1],-f[2], f[3],-f[4],-f[5]))
+        c.append((-f[0], f[1], f[2],-f[3],-f[4],-f[5]))
+        c.append((-f[0],-f[1],-f[2],-f[3],-f[4], f[5]))
+        c.append((-f[0],-f[1],-f[2],-f[3], f[4],-f[5]))
+        c.append((-f[0],-f[1],-f[2], f[3],-f[4],-f[5]))
+        c.append((-f[0],-f[1], f[2],-f[3],-f[4],-f[5]))
+        c.append((-f[0], f[1],-f[2],-f[3],-f[4],-f[5]))
+        c.append(( f[0],-f[1],-f[2],-f[3],-f[4],-f[5]))
     else:
-      if len(t) == 2:
+      if len(f) == 2:
         # x[1] + x[2] + 1
-        c.append((-t[0],-t[1]))
-        c.append(( t[0], t[1]))
-      elif len(t) == 3:
+        c.append((-f[0],-f[1]))
+        c.append(( f[0], f[1]))
+      elif len(f) == 3:
         # x[1] + x[2] + x[3] + 1
-        c.append(( t[0], t[1], t[2]))
-        c.append((-t[0],-t[1], t[2]))
-        c.append((-t[0], t[1],-t[2]))
-        c.append(( t[0],-t[1],-t[2]))
-      elif len(t) == 4:
+        c.append(( f[0], f[1], f[2]))
+        c.append((-f[0],-f[1], f[2]))
+        c.append((-f[0], f[1],-f[2]))
+        c.append(( f[0],-f[1],-f[2]))
+      elif len(f) == 4:
         # x[1] + x[2] + x[3] + x[4] + 1
-        c.append(( t[0], t[1], t[2], t[3]))
-        c.append((-t[0],-t[1], t[2], t[3]))
-        c.append((-t[0], t[1],-t[2], t[3]))
-        c.append((-t[0], t[1], t[2],-t[3]))
-        c.append(( t[0],-t[1],-t[2], t[3]))
-        c.append(( t[0],-t[1], t[2],-t[3]))
-        c.append(( t[0], t[1],-t[2],-t[3]))
-        c.append((-t[0],-t[1],-t[2],-t[3]))
-      elif len(t) == 5:
+        c.append(( f[0], f[1], f[2], f[3]))
+        c.append((-f[0],-f[1], f[2], f[3]))
+        c.append((-f[0], f[1],-f[2], f[3]))
+        c.append((-f[0], f[1], f[2],-f[3]))
+        c.append(( f[0],-f[1],-f[2], f[3]))
+        c.append(( f[0],-f[1], f[2],-f[3]))
+        c.append(( f[0], f[1],-f[2],-f[3]))
+        c.append((-f[0],-f[1],-f[2],-f[3]))
+      elif len(f) == 5:
         # x[1] + x[2] + x[3] + x[4] + x[5] + 1
-        c.append(( t[0], t[1], t[2], t[3], t[4]))
-        c.append((-t[0],-t[1], t[2], t[3], t[4]))
-        c.append((-t[0], t[1],-t[2], t[3], t[4]))
-        c.append((-t[0], t[1], t[2],-t[3], t[4]))
-        c.append((-t[0], t[1], t[2], t[3],-t[4]))
-        c.append(( t[0],-t[1],-t[2], t[3], t[4]))
-        c.append(( t[0],-t[1], t[2],-t[3], t[4]))
-        c.append(( t[0],-t[1], t[2], t[3],-t[4]))
-        c.append(( t[0], t[1],-t[2],-t[3], t[4]))
-        c.append(( t[0], t[1],-t[2], t[3],-t[4]))
-        c.append(( t[0], t[1], t[2],-t[3],-t[4]))
-        c.append((-t[0],-t[1],-t[2],-t[3], t[4]))
-        c.append((-t[0],-t[1],-t[2], t[3],-t[4]))
-        c.append((-t[0],-t[1], t[2],-t[3],-t[4]))
-        c.append((-t[0], t[1],-t[2],-t[3],-t[4]))
-        c.append(( t[0],-t[1],-t[2],-t[3],-t[4]))
-      elif len(t) == 6:
+        c.append(( f[0], f[1], f[2], f[3], f[4]))
+        c.append((-f[0],-f[1], f[2], f[3], f[4]))
+        c.append((-f[0], f[1],-f[2], f[3], f[4]))
+        c.append((-f[0], f[1], f[2],-f[3], f[4]))
+        c.append((-f[0], f[1], f[2], f[3],-f[4]))
+        c.append(( f[0],-f[1],-f[2], f[3], f[4]))
+        c.append(( f[0],-f[1], f[2],-f[3], f[4]))
+        c.append(( f[0],-f[1], f[2], f[3],-f[4]))
+        c.append(( f[0], f[1],-f[2],-f[3], f[4]))
+        c.append(( f[0], f[1],-f[2], f[3],-f[4]))
+        c.append(( f[0], f[1], f[2],-f[3],-f[4]))
+        c.append((-f[0],-f[1],-f[2],-f[3], f[4]))
+        c.append((-f[0],-f[1],-f[2], f[3],-f[4]))
+        c.append((-f[0],-f[1], f[2],-f[3],-f[4]))
+        c.append((-f[0], f[1],-f[2],-f[3],-f[4]))
+        c.append(( f[0],-f[1],-f[2],-f[3],-f[4]))
+      elif len(f) == 6:
         # x[1] + x[2] + x[3] + x[4] + x[5] + x[6] + 1
-        c.append(( t[0], t[1], t[2], t[3], t[4], t[5]))
-        c.append((-t[0],-t[1], t[2], t[3], t[4], t[5]))
-        c.append((-t[0], t[1],-t[2], t[3], t[4], t[5]))
-        c.append((-t[0], t[1], t[2],-t[3], t[4], t[5]))
-        c.append((-t[0], t[1], t[2], t[3],-t[4], t[5]))
-        c.append((-t[0], t[1], t[2], t[3], t[4],-t[5]))
-        c.append(( t[0],-t[1],-t[2], t[3], t[4], t[5]))
-        c.append(( t[0],-t[1], t[2],-t[3], t[4], t[5]))
-        c.append(( t[0],-t[1], t[2], t[3],-t[4], t[5]))
-        c.append(( t[0],-t[1], t[2], t[3], t[4],-t[5]))
-        c.append(( t[0], t[1],-t[2],-t[3], t[4], t[5]))
-        c.append(( t[0], t[1],-t[2], t[3],-t[4], t[5]))
-        c.append(( t[0], t[1],-t[2], t[3], t[4],-t[5]))
-        c.append(( t[0], t[1], t[2],-t[3],-t[4], t[5]))
-        c.append(( t[0], t[1], t[2],-t[3], t[4],-t[5]))
-        c.append(( t[0], t[1], t[2], t[3],-t[4],-t[5]))
-        c.append((-t[0],-t[1],-t[2],-t[3], t[4], t[5]))
-        c.append((-t[0],-t[1],-t[2], t[3],-t[4], t[5]))
-        c.append((-t[0],-t[1], t[2],-t[3],-t[4], t[5]))
-        c.append((-t[0], t[1],-t[2],-t[3],-t[4], t[5]))
-        c.append(( t[0],-t[1],-t[2],-t[3],-t[4], t[5]))
-        c.append((-t[0],-t[1],-t[2], t[3], t[4],-t[5]))
-        c.append((-t[0],-t[1], t[2],-t[3], t[4],-t[5]))
-        c.append((-t[0], t[1],-t[2],-t[3], t[4],-t[5]))
-        c.append(( t[0],-t[1],-t[2],-t[3], t[4],-t[5]))
-        c.append((-t[0],-t[1], t[2], t[3],-t[4],-t[5]))
-        c.append((-t[0], t[1],-t[2], t[3],-t[4],-t[5]))
-        c.append(( t[0],-t[1],-t[2], t[3],-t[4],-t[5]))
-        c.append((-t[0], t[1], t[2],-t[3],-t[4],-t[5]))
-        c.append(( t[0],-t[1], t[2],-t[3],-t[4],-t[5]))
-        c.append(( t[0], t[1],-t[2],-t[3],-t[4],-t[5]))
-        c.append((-t[0],-t[1],-t[2],-t[3],-t[4],-t[5]))
+        c.append(( f[0], f[1], f[2], f[3], f[4], f[5]))
+        c.append((-f[0],-f[1], f[2], f[3], f[4], f[5]))
+        c.append((-f[0], f[1],-f[2], f[3], f[4], f[5]))
+        c.append((-f[0], f[1], f[2],-f[3], f[4], f[5]))
+        c.append((-f[0], f[1], f[2], f[3],-f[4], f[5]))
+        c.append((-f[0], f[1], f[2], f[3], f[4],-f[5]))
+        c.append(( f[0],-f[1],-f[2], f[3], f[4], f[5]))
+        c.append(( f[0],-f[1], f[2],-f[3], f[4], f[5]))
+        c.append(( f[0],-f[1], f[2], f[3],-f[4], f[5]))
+        c.append(( f[0],-f[1], f[2], f[3], f[4],-f[5]))
+        c.append(( f[0], f[1],-f[2],-f[3], f[4], f[5]))
+        c.append(( f[0], f[1],-f[2], f[3],-f[4], f[5]))
+        c.append(( f[0], f[1],-f[2], f[3], f[4],-f[5]))
+        c.append(( f[0], f[1], f[2],-f[3],-f[4], f[5]))
+        c.append(( f[0], f[1], f[2],-f[3], f[4],-f[5]))
+        c.append(( f[0], f[1], f[2], f[3],-f[4],-f[5]))
+        c.append((-f[0],-f[1],-f[2],-f[3], f[4], f[5]))
+        c.append((-f[0],-f[1],-f[2], f[3],-f[4], f[5]))
+        c.append((-f[0],-f[1], f[2],-f[3],-f[4], f[5]))
+        c.append((-f[0], f[1],-f[2],-f[3],-f[4], f[5]))
+        c.append(( f[0],-f[1],-f[2],-f[3],-f[4], f[5]))
+        c.append((-f[0],-f[1],-f[2], f[3], f[4],-f[5]))
+        c.append((-f[0],-f[1], f[2],-f[3], f[4],-f[5]))
+        c.append((-f[0], f[1],-f[2],-f[3], f[4],-f[5]))
+        c.append(( f[0],-f[1],-f[2],-f[3], f[4],-f[5]))
+        c.append((-f[0],-f[1], f[2], f[3],-f[4],-f[5]))
+        c.append((-f[0], f[1],-f[2], f[3],-f[4],-f[5]))
+        c.append(( f[0],-f[1],-f[2], f[3],-f[4],-f[5]))
+        c.append((-f[0], f[1], f[2],-f[3],-f[4],-f[5]))
+        c.append(( f[0],-f[1], f[2],-f[3],-f[4],-f[5]))
+        c.append(( f[0], f[1],-f[2],-f[3],-f[4],-f[5]))
+        c.append((-f[0],-f[1],-f[2],-f[3],-f[4],-f[5]))
     return c
