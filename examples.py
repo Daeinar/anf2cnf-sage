@@ -10,69 +10,31 @@ def run_tests():
        x[1]*x[2] + x[2]*x[3] + x[1]]
 
   # standard
-  test_ss_ss(R,L)
+  test_strategies(R,L,"SS","SS",False)
 
   # linear partner
-  #test_lps_ss(R,L)
+  #test_strategies(R,L,"LPS","SS",False)
 
   # double partner
-  #test_dps_ss(R,L)
+  #test_strategies(R,L,"DPS","SS",False)
 
   # quadratic partner
-  #test_qps_ss(R,L)
+  #test_strategies(R,L,"QPS","SS",False)
 
   # cubic partner
-  #test_ss_cps(R,L)
+  #test_strategies(R,L,"SS","CPS",False)
 
   # standard (xor)
-  #test_xor_ss_ss(R,L)
+  #test_strategies(R,L,"SS","SS",True)
 
-def test_ss_ss(R,L):
+def test_strategies(R,L,cs,qs,use_xor):
   fn = tmp_filename()
-  solver = DIMACS(filename=fn)
-  enc = SageCNFEncoder(solver, R, use_xor_clauses=False, cutting_number=4)
-  enc(L,"SS","SS")
+  if not use_xor:
+    solver = DIMACS(filename=fn)
+    enc = SageCNFEncoder(solver, R, use_xor_clauses=use_xor, cutting_number=4)
+  else:
+    solver = CryptoMiniSat(filename=fn)
+    enc = SageCNFEncoder(solver, R, use_xor_clauses=use_xor)
+  enc(L,cs,qs)
   _ = solver.write()
   print open(fn).read()
-
-def test_lps_ss(R,L):
-  fn = tmp_filename()
-  solver = DIMACS(filename=fn)
-  enc = SageCNFEncoder(solver, R, use_xor_clauses=False, cutting_number=4)
-  enc(L,"LPS","SS")
-  _ = solver.write()
-  print open(fn).read()
-
-def test_dps_ss(R,L):
-  fn = tmp_filename()
-  solver = DIMACS(filename=fn)
-  enc = SageCNFEncoder(solver, R, use_xor_clauses=False, cutting_number=4)
-  enc(L,"DPS","SS")
-  _ = solver.write()
-  print open(fn).read()
-
-def test_qps_ss(R,L):
-  fn = tmp_filename()
-  solver = DIMACS(filename=fn)
-  enc = SageCNFEncoder(solver, R, use_xor_clauses=False, cutting_number=4)
-  enc(L,"QPS","SS")
-  _ = solver.write()
-  print open(fn).read()
-
-def test_ss_cps(R,L):
-  fn = tmp_filename()
-  solver = DIMACS(filename=fn)
-  enc = SageCNFEncoder(solver, R, use_xor_clauses=False, cutting_number=4)
-  enc(L,"SS","CPS")
-  _ = solver.write()
-  print open(fn).read()
-
-"""
-def test_xor_ss_ss(R,L):
-  fn = tmp_filename()
-  solver = CryptoMiniSat(filename=fn)
-  enc = SageCNFEncoder(solver, R, use_xor_clauses=True)
-  enc(L,"SS","SS")
-  _ = solver.write()
-  print open(fn).read()
-"""
