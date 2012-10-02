@@ -1,6 +1,6 @@
 from anf2cnf_sage import SageCNFEncoder
 from sage.sat.solvers.dimacs import DIMACS
-#from sage.sat.solvers.cryptominisat import CryptoMiniSat
+from sage.sat.solvers.cryptominisat import CryptoMiniSat
 
 def run_tests():
   var_names = ['x00','x01','x02','x03']
@@ -10,7 +10,7 @@ def run_tests():
        x[1]*x[2] + x[2]*x[3] + x[1]]
 
   # standard
-  test_strategies(R,L,"SS","SS",False)
+  #test_strategies(R,L,"SS","SS",False)
 
   # linear partner
   #test_strategies(R,L,"LPS","SS",False)
@@ -25,16 +25,18 @@ def run_tests():
   #test_strategies(R,L,"SS","CPS",False)
 
   # standard (xor)
-  #test_strategies(R,L,"SS","SS",True)
+  test_strategies(R,L,"SS","SS",True)
 
 def test_strategies(R,L,cs,qs,use_xor):
-  fn = tmp_filename()
   if not use_xor:
+    fn = tmp_filename()
     solver = DIMACS(filename=fn)
     enc = SageCNFEncoder(solver, R, use_xor_clauses=use_xor, cutting_number=4)
+    enc(L,cs,qs)
+    _ = solver.write()
+    print open(fn).read()
   else:
-    solver = CryptoMiniSat(filename=fn)
+    solver = CryptoMiniSat()
     enc = SageCNFEncoder(solver, R, use_xor_clauses=use_xor)
-  enc(L,cs,qs)
-  _ = solver.write()
-  print open(fn).read()
+    enc(L,cs,qs)
+    print(solver)
