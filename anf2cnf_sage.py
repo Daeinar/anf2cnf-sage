@@ -18,20 +18,21 @@ from sage.sat.converters import ANF2CNFConverter
 class SageCNFEncoder(ANF2CNFConverter):
   """
   ANF to CNF converter supporting different conversion strategies.
-
-  INPUT:
-
-  - ``solver`` - a SAT-solver instance.
-  - ``ring`` - a :cls:`BooleanPolynomialRing`.
-  - ``use_xor_clauses`` - boolean (default: ``False``) use XOR clauses. If
-    ``True`` use only if ``solver`` supports it. 
-  - ``cutting_number`` - integer (default: 4) maximum length of XOR chains after
-    splitting if XOR clauses are not supported.  Supported values are 3,...,6.
-
   """
+
   def __init__(self, solver, ring, use_xor_clauses=False, cutting_number=4):
-    if (cutting_number not in xrange(3,7)): 
-      raise ValueError("Please submit a valid cutting_number \in {3,...,6}.") 
+    """
+    INPUT:
+
+    - ``solver`` - a SAT-solver instance.
+    - ``ring`` - a :cls:`BooleanPolynomialRing`.
+    - ``use_xor_clauses`` - boolean (default: ``False``) use XOR clauses. If
+      ``True`` use only if ``solver`` supports it. 
+    - ``cutting_number`` - integer (default: 4) maximum length of XOR chains after
+      splitting if XOR clauses are not supported.  Supported values are 3,...,6.
+
+    """
+    assert(cutting_number in xrange(3,7))
 
     self.create_subpolys = {"SS": self.p_ss, "LPS": self.p_lps, \
         "DPS": self.p_dps, "QPS": self.p_qps, "CPS": self.p_cps}
@@ -109,10 +110,9 @@ class SageCNFEncoder(ANF2CNFConverter):
       strategy that should be used. 
 
     """
-    if (qstrategy not in ["SS","LPS","DPS","QPS"]): 
-      raise ValueError("Please submit a valid substitution strategy for quadratic monomial. Supported values are qstrategy = SS, LPS, DPS, QPS") 
-    if (cstrategy not in ["SS","CPS"]):
-      raise ValueError("Please submit a valid substitution strategy for cubic monomials. Supported values are cstrategy = SS, CPS") 
+    assert(qstrategy in ["SS","LPS","DPS","QPS"]) 
+    assert(cstrategy in ["SS","CPS"])
+
     hom_parts = self.homogeneous_parts(f)
     lin_poly = []
     for deg in hom_parts.keys()[::-1]:
