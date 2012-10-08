@@ -31,6 +31,47 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``cutting_number`` - integer (default: 4) maximum length of XOR chains after
       splitting if XOR clauses are not supported.  Supported values are 3,...,6.
 
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c,d> = BooleanPolynomialRing()
+      sage: L = [a*b*c + a*c*d + b*c + b + c + d + 1, b*c + c*d + b]
+
+    Standard substitution::
+      sage: enc = SageCNFEncoder(DIMACS(), R, use_xor_clauses=False, cutting_number=4)
+      sage: enc(L,"SS","SS")
+      [None, a, b, c, d, a*b*c, a*c*d, b*c, None, c*d]
+      
+    Linear partner substitution::
+      sage: enc = SageCNFEncoder(DIMACS(), R, use_xor_clauses=False, cutting_number=4)
+      sage: enc(L,"LPS","SS")
+      [None, a, b, c, d, a*b*c, a*c*d, b*c + b, None, c*d] 
+
+    Double partner substitution::
+      sage: enc = SageCNFEncoder(DIMACS(), R, use_xor_clauses=False, cutting_number=4)
+      sage: enc(L,"DPS","SS")
+      [None, a, b, c, d, a*b*c, a*c*d, b*c + b + c + 1, b*c + b, c*d] 
+
+    Quadratic partner substitution::
+      sage: enc = SageCNFEncoder(DIMACS(), R, use_xor_clauses=False, cutting_number=4)
+      sage: enc(L,"QPS","SS")
+      [None, a, b, c, d, a*b*c, a*c*d, b*c, None, b*c + c*d]
+
+    Cubic partner substitution::
+      sage: enc = SageCNFEncoder(DIMACS(), R, use_xor_clauses=False, cutting_number=4)
+      sage: enc(L,"SS","CPS")
+      [None, a, b, c, d, a*b*c + a*c*d, b*c, None, c*d]
+
+    Standard substitution (XOR)::
+      sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat                            # optional - cryptominisat 
+      sage: solver = CryptoMiniSat()                                                            # optional - cryptominisat
+      sage: enc = SageCNFEncoder(solver, R, use_xor_clauses=True)                               # optional - cryptominisat
+      sage: enc(L,"SS","SS")                                                                    # optional - cryptominisat
+      [None, a, b, c, d, a*b*c, a*c*d, b*c, c*d] 
+      sage: print(solver)                                                                       # optional - cryptominisat
+      CryptoMiniSat
+      #vars:       8, #lits:      43, #clauses:       6, #learnt:       0, #assigns:       0 
+
     """
     assert(cutting_number in xrange(3,7))
 
@@ -41,13 +82,13 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     self.solver = solver
     self.ring = ring
-    self.one = self.ring.one()
-    self.zero = self.ring.zero()
+    self.one = self.ring.one() # make private
+    self.zero = self.ring.zero() # make private
     if use_xor_clauses is not False:
       use_xor_clauses = hasattr(solver,"add_xor_clause")
     self.use_xor_clauses = use_xor_clauses
     self.cutting_number = cutting_number
-    self._phi = [None]
+    self._phi = [None] # make @property, function: reset_phi?!
 
     for x in sorted([x.lm() for x in self.ring.gens()], key=lambda x: x.index()):
       self.var(x)
@@ -246,7 +287,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     """
     for t in hom_parts[2]:
-      x = gcd(m,t)
+      x = m.gcd(t)
       if x != 1:
         hom_parts[2].remove(t)
         return self.substitute(m+t,"QPS")
@@ -266,7 +307,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     """
     for t in hom_parts[3]:
-      x = gcd(m,t)
+      x = m.gcd(t)
       if x.deg() == 2:
         hom_parts[3].remove(t)
         return self.substitute(m+t,"CPS")
@@ -278,8 +319,27 @@ class SageCNFEncoder(ANF2CNFConverter):
     x[1]*...*x[n] + y <=> (x[1] | -y) & ... & (x[n] | -y) & (-x[1] | ... | -x[n] | y)
 
     INPUT:
+
     - ``f`` - a :cls:`BooleanPolynomial`.
     - ``v`` - boolean variable that was used for substituting ``f``.
+
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b> = BooleanPolynomialRing()
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R)
+      sage: enc.c_ss(a*b,enc.var())
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 3 3
+      1 -3 0
+      2 -3 0
+      -1 -2 3 0
+
+      sage: enc.phi()
+      [None, a, b, None]
 
     """
     l = []
@@ -295,8 +355,27 @@ class SageCNFEncoder(ANF2CNFConverter):
     x[1]*x[2] + x[1] + y <=> (x[1] | -y) & (-x[2] | -y) & (-x[1] | x[2] | y)
 
     INPUT:
+
     - ``f`` - a :cls:`BooleanPolynomial`
     - ``v`` - boolean variable that was used for substituting ``f``.
+
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b> = BooleanPolynomialRing()
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R)
+      sage: enc.c_lps(a*b+a,enc.var())
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 3 3
+      1 -3 0
+      -2 -3 0
+      -1 2 3 0
+
+      sage: enc.phi()
+      [None, a, b, None]
 
     """
     p = self.phi().index(f-f.lm())
@@ -311,8 +390,27 @@ class SageCNFEncoder(ANF2CNFConverter):
     x[1]*x[2] + x[1] + x[2] + 1 + y <=> (-x[1] | -y) & (-x[2] | -y) & (x[1] | x[2] | y)
 
     INPUT:
+
     - ``f`` - a :cls:`BooleanPolynomial`.
     - ``v`` - boolean variable that was used for substituting ``f``.
+
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b> = BooleanPolynomialRing()
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R)
+      sage: enc.c_dps(a*b+a+b+1,enc.var())
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 3 3
+      -1 -3 0
+      -2 -3 0
+      1 2 3 0
+
+      sage: enc.phi()
+      [None, a, b, None]
 
     """
     w = f.variables()
@@ -328,12 +426,33 @@ class SageCNFEncoder(ANF2CNFConverter):
     (-x[1] | -x[2] | x[3] | y) & (-x[1] | x[2] | -x[3] | y)
 
     INPUT:
+
     - ``f`` - a :cls:`BooleanPolynomial`.
     - ``v`` - boolean variable that was used for substituting ``f``.
 
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c> = BooleanPolynomialRing()
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R)
+      sage: enc.c_qps(a*b+a*c,enc.var())
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 4 5
+      1 -4 0
+      2 3 -4 0
+      -2 -3 -4 0
+      -1 -2 3 4 0
+      -1 2 -3 4 0
+
+      sage: enc.phi()
+      [None, a, b, c, None]
+
     """
     t = list(f)
-    p = self.phi().index(gcd(t[0],t[1]))
+    p = self.phi().index(t[0].gcd(t[1]))
     w = [self.phi().index(x) for x in f.variables()]
     w.remove(p)
     self.solver.add_clause((p,-v))
@@ -354,9 +473,30 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``f`` - a :cls:`BooleanPolynomial`.
     - ``v`` - boolean variable that was used for substituting ``f``.
 
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c,d> = BooleanPolynomialRing()
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R)
+      sage: enc.c_cps(a*b*c+a*b*d,enc.var())
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 5 6
+      1 -5 0
+      2 -5 0
+      3 4 -5 0
+      -3 -4 -5 0
+      -1 -2 -3 4 5 0
+      -1 -2 3 -4 5 0
+
+      sage: enc.phi()
+      [None, a, b, c, d, None]
+
     """
     t = list(f)
-    p = [self.phi().index(x) for x in gcd(t[0],t[1]).variables()]
+    p = [self.phi().index(x) for x in (t[0].gcd(t[1])).variables()]
     w = [self.phi().index(x) for x in f.variables()]
     w.remove(p[0])
     w.remove(p[1])
@@ -375,6 +515,68 @@ class SageCNFEncoder(ANF2CNFConverter):
     INPUT:
 
     - ``f`` - list of index integers representing the linearized polynomial.
+
+    EXAMPLES: 
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R = BooleanPolynomialRing(4,'x')
+
+    First lets convert the polynomial x[0] + x[1] + x[2] + x[3]:: 
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R,cutting_number=4,use_xor_clauses=False)
+      sage: enc.linearized([1,2,3,4])
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 4 8
+      -1 2 3 4 0
+      1 -2 3 4 0
+      1 2 -3 4 0
+      1 2 3 -4 0
+      -1 -2 -3 4 0
+      -1 -2 3 -4 0
+      -1 2 -3 -4 0
+      1 -2 -3 -4 0
+
+    Now we convert the polynomial x[0] + x[1] + x[2] + x[3] + 1::
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R,cutting_number=4,use_xor_clauses=False)
+      sage: enc.linearized([0,1,2,3,4])
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 4 8
+      1 2 3 4 0
+      -1 -2 3 4 0
+      -1 2 -3 4 0
+      -1 2 3 -4 0
+      1 -2 -3 4 0
+      1 -2 3 -4 0
+      1 2 -3 -4 0
+      -1 -2 -3 -4 0
+    
+    # TODO: improve the tests below!
+    And now the same with XOR clauses. First x[0] + x[1] + x[2] + x[3]::
+      sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat               # optional - cryptominisat
+      sage: solver = CryptoMiniSat()                                               # optional - cryptominisat
+      sage: enc = SageCNFEncoder(solver,R,use_xor_clauses=True)                    # optional - cryptominisat
+      sage: enc.linearized([1,2,3,4])                                              # optional - cryptominisat
+      sage: solver()                                                               # optional - cryptominisat
+      (None, False, False, True, False)
+      sage: print(solver)                                                          # optional - cryptominisat
+      CryptoMiniSat
+      #vars:       4, #lits:       4, #clauses:       1, #learnt:       0, #assigns:       0
+
+    Second x[0] + x[1] + x[2] + x[3] + 1::
+      sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat               # optional - cryptominisat
+      sage: solver = CryptoMiniSat()                                               # optional - cryptominisat
+      sage: enc = SageCNFEncoder(solver,R,use_xor_clauses=True)                    # optional - cryptominisat
+      sage: enc.linearized([0,1,2,3,4])                                            # optional - cryptominisat
+      sage: solver()                                                               # optional - cryptominisat
+      (None, False, True, False, False)
+      sage: print(solver)                                                          # optional - cryptominisat
+      CryptoMiniSat
+      #vars:       4, #lits:       4, #clauses:       1, #learnt:       0, #assigns:       0
 
     """
     equal_zero = True
@@ -412,7 +614,28 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: list of lists where every of the inner lists represents a polynomial
     g (with len(support(g) <= cutting_number) that was broken off the polynomial
-    ``f``. 
+    ``f``.
+
+    EXAMPLES: 
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R = BooleanPolynomialRing(5,'x')
+      sage: solver = DIMACS()
+      sage: enc = SageCNFEncoder(solver,R,cutting_number=4)
+      sage: enc.split([1,2,3,4,5])
+      [[1, 2, 3, 6], [6, 4, 5]]
+      
+      sage: R = BooleanPolynomialRing(6, 'x')
+      sage: solver = DIMACS()
+      sage: enc = SageCNFEncoder(solver,R,cutting_number=4)
+      sage: enc.split([1,2,3,4,5,6])
+      [[1, 2, 3, 7], [7, 4, 5, 6]]
+
+      sage: R = BooleanPolynomialRing(7, 'x')
+      sage: solver = DIMACS()
+      sage: enc = SageCNFEncoder(solver,R,cutting_number=4)
+      sage: enc.split([1,2,3,4,5,6,7])
+      [[1, 2, 3, 8], [8, 4, 5, 9], [9, 6, 7]]
 
     """
     c = self.cutting_number
@@ -442,8 +665,68 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: A list of clauses modeling the polynomial ``f``.
 
+    EXAMPLES:
+
+      sage: R.<a> = BooleanPolynomialRing()
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: solver = DIMACS()
+      sage: enc = SageCNFEncoder(solver,R)
+
+      sage: enc.c_lin_cnf([1,2], False)
+      [(-1, -2), (1, 2)]
+      sage: enc.c_lin_cnf([1,2], True)
+      [(1, -2), (-1, 2)] 
+
+      sage: enc.c_lin_cnf([1,2,3], False)
+      [(1, 2, 3), (-1, -2, 3), (-1, 2, -3), (1, -2, -3)]
+
+      sage: enc.c_lin_cnf([1,2,3], True)
+      [(-1, 2, 3), (1, -2, 3), (-1, 2, -3), (-1, -2, -3)]
+
+      sage: enc.c_lin_cnf([1,2,3,4], False)
+      [(1, 2, 3, 4), (-1, -2, 3, 4), (-1, 2, -3, 4), (-1, 2, 3, -4),
+       (1, -2, -3, 4), (1, -2, 3, -4), (1, 2, -3, -4), (-1, -2, -3, -4)]
+
+      sage: enc.c_lin_cnf([1,2,3,4], True)
+      [(-1, 2, 3, 4), (1, -2, 3, 4), (1, 2, -3, 4), (1, 2, 3, -4),
+       (-1, -2, -3, 4), (-1, -2, 3, -4), (-1, 2, -3, -4), (1, -2, -3, -4)]
+
+      sage: enc.c_lin_cnf([1,2,3,4,5], False)
+      [(1, 2, 3, 4, 5), (-1, -2, 3, 4, 5), (-1, 2, -3, 4, 5), (-1, 2, 3, -4, 5),
+       (-1, 2, 3, 4, -5), (1, -2, -3, 4, 5), (1, -2, 3, -4, 5), (1, -2, 3, 4, -5),
+       (1, 2, -3, -4, 5), (1, 2, -3, 4, -5), (1, 2, 3, -4, -5), (-1, -2, -3, -4, 5),
+       (-1, -2, -3, 4, -5), (-1, -2, 3, -4, -5), (-1, 2, -3, -4, -5), (1, -2, -3, -4, -5)]
+
+      sage: enc.c_lin_cnf([1,2,3,4,5], True)
+      [(-1, 2, 3, 4, 5), (1, -2, 3, 4, 5), (1, 2, -3, 4, 5), (1, 2, 3, -4, 5),
+       (1, 2, 3, 4, -5), (-1, -2, -3, 4, 5), (-1, -2, 3, -4, 5), (-1, -2, 3, 4, -5),
+       (-1, 2, -3, 4, -5), (-1, 2, 3, -4, -5), (-1, 2, -3, -4, 5), (1, -2, 3, -4, -5),
+       (1, 2, -3, -4, -5), (1, -2, -3, 4, -5), (1, -2, -3, -4, 5), (-1, -2, -3, -4, -5)]
+
+      sage: enc.c_lin_cnf([1,2,3,4,5,6], False)
+      [(1, 2, 3, 4, 5, 6), (-1, -2, 3, 4, 5, 6), (-1, 2, -3, 4, 5, 6), (-1, 2, 3, -4, 5, 6),
+       (-1, 2, 3, 4, -5, 6), (-1, 2, 3, 4, 5, -6), (1, -2, -3, 4, 5, 6), (1, -2, 3, -4, 5, 6),
+       (1, -2, 3, 4, -5, 6), (1, -2, 3, 4, 5, -6), (1, 2, -3, -4, 5, 6), (1, 2, -3, 4, -5, 6),
+       (1, 2, -3, 4, 5, -6), (1, 2, 3, -4, -5, 6), (1, 2, 3, -4, 5, -6), (1, 2, 3, 4, -5, -6),
+       (-1, -2, -3, -4, 5, 6), (-1, -2, -3, 4, -5, 6), (-1, -2, 3, -4, -5, 6), (-1, 2, -3, -4, -5, 6),
+       (1, -2, -3, -4, -5, 6), (-1, -2, -3, 4, 5, -6), (-1, -2, 3, -4, 5, -6), (-1, 2, -3, -4, 5, -6),
+       (1, -2, -3, -4, 5, -6), (-1, -2, 3, 4, -5, -6), (-1, 2, -3, 4, -5, -6), (1, -2, -3, 4, -5, -6),
+       (-1, 2, 3, -4, -5, -6), (1, -2, 3, -4, -5, -6), (1, 2, -3, -4, -5, -6), (-1, -2, -3, -4, -5, -6)]
+
+      sage: enc.c_lin_cnf([1,2,3,4,5,6], True)
+      [(-1, 2, 3, 4, 5, 6), (1, -2, 3, 4, 5, 6), (1, 2, -3, 4, 5, 6), (1, 2, 3, -4, 5, 6),
+       (1, 2, 3, 4, -5, 6), (1, 2, 3, 4, 5, -6), (-1, -2, -3, 4, 5, 6), (-1, -2, 3, -4, 5, 6),
+       (-1, -2, 3, 4, -5, 6), (-1, -2, 3, 4, 5, -6), (-1, 2, -3, -4, 5, 6), (-1, 2, -3, 4, -5, 6),
+       (-1, 2, -3, 4, 5, -6), (-1, 2, 3, -4, -5, 6), (-1, 2, 3, -4, 5, -6), (-1, 2, 3, 4, -5, -6),
+       (1, -2, -3, -4, 5, 6), (1, -2, -3, 4, -5, 6), (1, -2, -3, 4, 5, -6), (1, -2, 3, -4, -5, 6),
+       (1, -2, 3, -4, 5, -6), (1, -2, 3, 4, -5, -6), (1, 2, -3, -4, -5, 6), (1, 2, -3, -4, 5, -6),
+       (-1, 2, -3, 4, -5, -6), (-1, 2, 3, -4, -5, -6), (-1, -2, -3, -4, -5, 6), (-1, -2, -3, -4, 5, -6),
+       (-1, -2, -3, 4, -5, -6), (-1, -2, 3, -4, -5, -6), (-1, 2, -3, -4, -5, -6), (1, -2, -3, -4, -5, -6)]
+
     """
     c = []
+    # TODO: error checking
+
     if equal_zero:
       if len(f) == 2:
         # x[1] + x[2]

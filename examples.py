@@ -1,4 +1,4 @@
-from anf2cnf_sage import SageCNFEncoder
+#from anf2cnf_sage import SageCNFEncoder
 from sage.sat.solvers.dimacs import DIMACS
 from sage.sat.solvers.cryptominisat import CryptoMiniSat
 
@@ -19,13 +19,13 @@ def run_tests():
   #test_strategies(R,L,"DPS","SS",False)
 
   # quadratic partner
-  #test_strategies(R,L,"QPS","SS",False)
+  test_strategies(R,L,"QPS","SS",False)
 
   # cubic partner
   #test_strategies(R,L,"SS","CPS",False)
 
   # standard (xor)
-  test_strategies(R,L,"SS","SS",True)
+  #test_strategies(R,L,"SS","SS",True)
 
 def test_strategies(R,L,cs,qs,use_xor):
   if not use_xor:
