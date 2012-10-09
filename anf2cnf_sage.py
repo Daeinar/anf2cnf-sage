@@ -95,34 +95,34 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     Standard substitution::
       sage: enc = SageCNFEncoder(DIMACS(), R)
-      sage: enc(L,"SS","SS")
+      sage: enc(L)
       [None, a, b, c, d, a*b*c, a*c*d, b*c, None, c*d]
       
     Linear partner substitution::
       sage: enc = SageCNFEncoder(DIMACS(), R)
-      sage: enc(L,"LPS","SS")
+      sage: enc(L, qstrategy="LPS")
       [None, a, b, c, d, a*b*c, a*c*d, b*c + b, None, c*d] 
 
     Double partner substitution::
       sage: enc = SageCNFEncoder(DIMACS(), R)
-      sage: enc(L,"DPS","SS")
+      sage: enc(L, qstrategy="DPS")
       [None, a, b, c, d, a*b*c, a*c*d, b*c + b + c + 1, b*c + b, c*d] 
 
     Quadratic partner substitution::
       sage: enc = SageCNFEncoder(DIMACS(), R)
-      sage: enc(L,"QPS","SS")
+      sage: enc(L, qstrategy="QPS")
       [None, a, b, c, d, a*b*c, a*c*d, b*c, None, b*c + c*d]
 
     Cubic partner substitution::
       sage: enc = SageCNFEncoder(DIMACS(), R)
-      sage: enc(L,"SS","CPS")
+      sage: enc(L, cstrategy="CPS")
       [None, a, b, c, d, a*b*c + a*c*d, b*c, None, c*d]
 
     Standard substitution (XOR)::
       sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat          # optional - cryptominisat 
       sage: solver = CryptoMiniSat()                                          # optional - cryptominisat
       sage: enc = SageCNFEncoder(solver, R, use_xor_clauses=True)             # optional - cryptominisat
-      sage: enc(L,"SS","SS")                                                  # optional - cryptominisat
+      sage: enc(L)                                                            # optional - cryptominisat
       [None, a, b, c, d, a*b*c, a*c*d, b*c, c*d] 
       sage: print(solver)                                                     # optional - cryptominisat
       CryptoMiniSat
