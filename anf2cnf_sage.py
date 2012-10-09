@@ -145,7 +145,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     This is a thin wrapper around the SAT-solvers function where
     we keep track of which SAT variable corresponds to which
-    monomial.
+    monomial / polynomial.
 
     INPUT:
 
