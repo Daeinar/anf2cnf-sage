@@ -22,7 +22,7 @@ REQUIREMENTS
 * SAGE v5.3 or later (see http://www.sagemath.org)
 
 USAGE & EXAMPLES
-See examples.py
+See doctests in anf2cnf_sage.py.
 
 CONTACT
 For any questions you can contact Philipp Jovanovic via:

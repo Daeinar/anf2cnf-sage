@@ -35,44 +35,24 @@ class SageCNFEncoder(ANF2CNFConverter):
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c,d> = BooleanPolynomialRing()
-      sage: L = [a*b*c + a*c*d + b*c + b + c + d + 1, b*c + c*d + b]
+      sage: enc = SageCNFEncoder(DIMACS(), R, cutting_number = 5)
+      sage: enc.use_xor_clauses
+      False
+      sage: enc.cutting_number
+      5
+      sage: enc.phi
+      [None, a, b, c, d]
 
-    Standard substitution::
-      sage: enc = SageCNFEncoder(DIMACS(), R, use_xor_clauses=False, cutting_number=4)
-      sage: enc(L,"SS","SS")
-      [None, a, b, c, d, a*b*c, a*c*d, b*c, None, c*d]
-      
-    Linear partner substitution::
-      sage: enc = SageCNFEncoder(DIMACS(), R, use_xor_clauses=False, cutting_number=4)
-      sage: enc(L,"LPS","SS")
-      [None, a, b, c, d, a*b*c, a*c*d, b*c + b, None, c*d] 
-
-    Double partner substitution::
-      sage: enc = SageCNFEncoder(DIMACS(), R, use_xor_clauses=False, cutting_number=4)
-      sage: enc(L,"DPS","SS")
-      [None, a, b, c, d, a*b*c, a*c*d, b*c + b + c + 1, b*c + b, c*d] 
-
-    Quadratic partner substitution::
-      sage: enc = SageCNFEncoder(DIMACS(), R, use_xor_clauses=False, cutting_number=4)
-      sage: enc(L,"QPS","SS")
-      [None, a, b, c, d, a*b*c, a*c*d, b*c, None, b*c + c*d]
-
-    Cubic partner substitution::
-      sage: enc = SageCNFEncoder(DIMACS(), R, use_xor_clauses=False, cutting_number=4)
-      sage: enc(L,"SS","CPS")
-      [None, a, b, c, d, a*b*c + a*c*d, b*c, None, c*d]
-
-    Standard substitution (XOR)::
-      sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat                            # optional - cryptominisat 
-      sage: solver = CryptoMiniSat()                                                            # optional - cryptominisat
-      sage: enc = SageCNFEncoder(solver, R, use_xor_clauses=True)                               # optional - cryptominisat
-      sage: enc(L,"SS","SS")                                                                    # optional - cryptominisat
-      [None, a, b, c, d, a*b*c, a*c*d, b*c, c*d] 
-      sage: print(solver)                                                                       # optional - cryptominisat
-      CryptoMiniSat
-      #vars:       8, #lits:      43, #clauses:       6, #learnt:       0, #assigns:       0 
+      sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat       # optional - cryptominisat
+      sage: R.<a,b,c,d> = BooleanPolynomialRing()                          # optional - cryptominisat
+      sage: enc = SageCNFEncoder(CryptoMiniSat(), R, use_xor_clauses=True) # optional - cryptominisat
+      sage: enc.use_xor_clauses                                            # optional - cryptominisat
+      True
+      sage: enc.phi                                                        # optional - cryptominisat
+      [None, a, b, c, d]
 
     """
+    # TODO: check user parameters
     assert(cutting_number in xrange(3,7))
 
     self.create_subpolys = {"SS": self.p_ss, "LPS": self.p_lps, \
@@ -82,13 +62,13 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     self.solver = solver
     self.ring = ring
-    self.one = self.ring.one() # make private
-    self.zero = self.ring.zero() # make private
+    self._one = self.ring.one() 
+    self._zero = self.ring.zero() 
     if use_xor_clauses is not False:
       use_xor_clauses = hasattr(solver,"add_xor_clause")
     self.use_xor_clauses = use_xor_clauses
     self.cutting_number = cutting_number
-    self._phi = [None] # make @property, function: reset_phi?!
+    self._phi = [None] 
 
     for x in sorted([x.lm() for x in self.ring.gens()], key=lambda x: x.index()):
       self.var(x)
@@ -107,10 +87,51 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``cstrategy`` - string (default: "SS") sets the cubic substitution
       strategy that should be used. 
 
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c,d> = BooleanPolynomialRing()
+      sage: L = [a*b*c + a*c*d + b*c + b + c + d + 1, b*c + c*d + b]
+
+    Standard substitution::
+      sage: enc = SageCNFEncoder(DIMACS(), R)
+      sage: enc(L,"SS","SS")
+      [None, a, b, c, d, a*b*c, a*c*d, b*c, None, c*d]
+      
+    Linear partner substitution::
+      sage: enc = SageCNFEncoder(DIMACS(), R)
+      sage: enc(L,"LPS","SS")
+      [None, a, b, c, d, a*b*c, a*c*d, b*c + b, None, c*d] 
+
+    Double partner substitution::
+      sage: enc = SageCNFEncoder(DIMACS(), R)
+      sage: enc(L,"DPS","SS")
+      [None, a, b, c, d, a*b*c, a*c*d, b*c + b + c + 1, b*c + b, c*d] 
+
+    Quadratic partner substitution::
+      sage: enc = SageCNFEncoder(DIMACS(), R)
+      sage: enc(L,"QPS","SS")
+      [None, a, b, c, d, a*b*c, a*c*d, b*c, None, b*c + c*d]
+
+    Cubic partner substitution::
+      sage: enc = SageCNFEncoder(DIMACS(), R)
+      sage: enc(L,"SS","CPS")
+      [None, a, b, c, d, a*b*c + a*c*d, b*c, None, c*d]
+
+    Standard substitution (XOR)::
+      sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat          # optional - cryptominisat 
+      sage: solver = CryptoMiniSat()                                          # optional - cryptominisat
+      sage: enc = SageCNFEncoder(solver, R, use_xor_clauses=True)             # optional - cryptominisat
+      sage: enc(L,"SS","SS")                                                  # optional - cryptominisat
+      [None, a, b, c, d, a*b*c, a*c*d, b*c, c*d] 
+      sage: print(solver)                                                     # optional - cryptominisat
+      CryptoMiniSat
+      #vars:       8, #lits:      43, #clauses:       6, #learnt:       0, #assigns:       0 
+
     """
     for f in F:
-      self.clauses_strategy(f,qstrategy,cstrategy)
-    return self.phi()
+      self.clauses_by_strategy(f,qstrategy,cstrategy)
+    return self.phi
   
   def var(self, m=None, decision=None):
     """
@@ -126,17 +147,37 @@ class SageCNFEncoder(ANF2CNFConverter):
       polynomial.
     - ``decision`` - is this variable a deicison variable?
 
+    EXAMPLE:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c> = BooleanPolynomialRing()
+      sage: enc = SageCNFEncoder(DIMACS(),R)
+      sage: enc.var()
+      4
+
     """
     self._phi.append(m)
     return self.solver.var(decision=decision)
 
+  @property
   def phi(self):
     """
     Map SAT variables to polynomial variables.
+
+    EXAMPLE:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c> = BooleanPolynomialRing()
+      sage: enc = SageCNFEncoder(DIMACS(),R)
+      sage: enc.var()
+      4
+      sage: enc.phi
+      [None, a, b, c, None]
+
     """
     return(self._phi)
 
-  def clauses_strategy(self, f, qstrategy="SS", cstrategy="SS"):
+  def clauses_by_strategy(self, f, qstrategy="SS", cstrategy="SS"):
     """
     Convert ``f`` using the quadratic substitution strategy ``qstrategy``and the
     cubic substitution strategy ``cstrategy``. Monomials of degree > 3 are
@@ -150,7 +191,25 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``cstrategy`` - string (default: "SS") sets the cubic substitution
       strategy that should be used. 
 
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c> = BooleanPolynomialRing()
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R)
+      sage: enc.clauses_by_strategy(a*b + c + 1,"SS","SS")
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 4 5
+      1 -4 0
+      2 -4 0
+      -1 -2 4 0
+      -4 -3 0
+      4 3 0
+
     """
+    # TODO: chekc parameters
     assert(qstrategy in ["SS","LPS","DPS","QPS"]) 
     assert(cstrategy in ["SS","CPS"])
 
@@ -161,9 +220,9 @@ class SageCNFEncoder(ANF2CNFConverter):
         m = hom_parts[deg].pop(0)
         if deg == 0:
           # Note: Index 0 corresponds to the constant coefficient 1!
-          sub_var = self.phi().index(None)
+          sub_var = self.phi.index(None)
         elif deg == 1:
-          sub_var = self.phi().index(m) 
+          sub_var = self.phi.index(m) 
         elif deg == 2:
           sub_var = self.create_subpolys[qstrategy](m,hom_parts)
         elif deg == 3:
@@ -172,7 +231,7 @@ class SageCNFEncoder(ANF2CNFConverter):
           sub_var = self.create_subpolys["SS"](m,hom_parts)
         lin_poly.append(sub_var)
    
-    self.linearized(lin_poly)
+    self.lin_to_clauses(lin_poly)
 
   def homogeneous_parts(self,f):
     """
@@ -185,6 +244,14 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: A dictionary h, where h[deg] returns a list containing all the
     monomials m of f where m.deg() == deg.
+
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c> = BooleanPolynomialRing()
+      sage: enc = SageCNFEncoder(DIMACS(),R)
+      sage: enc.homogeneous_parts(a*b*c + a*b + a*c + b + c + 1)
+      {0: [1], 1: [b, c], 2: [a*b, a*c], 3: [a*b*c]}
 
     """
     h = {}
@@ -207,10 +274,28 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: An index for a SAT variable corresponding to ``f``.
 
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c> = BooleanPolynomialRing()
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R)
+      sage: enc.substitute(a*b,"SS")
+      4
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 4 3
+      1 -4 0
+      2 -4 0
+      -1 -2 4 0
+      sage: enc.phi
+      [None, a, b, c, a*b]
+
     """
-    if f not in self.phi():
+    if f not in self.phi:
       self.create_clauses[strategy](f,self.var(f))
-    return self.phi().index(f)
+    return self.phi.index(f)
 
   def p_ss(self,m,hom_parts):
     """
@@ -223,6 +308,19 @@ class SageCNFEncoder(ANF2CNFConverter):
       the currently processed polynomial.
 
     OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
+
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c> = BooleanPolynomialRing()
+      sage: enc = SageCNFEncoder(DIMACS(),R)
+      sage: h = enc.homogeneous_parts(a*b + a*c + a + b + 1)
+      sage: print(h)
+      {0: [1], 1: [a, b], 2: [a*b, a*c]}
+      sage: enc.p_ss(a*b,h)
+      4
+      sage: enc.phi
+      [None, a, b, c, a*b]
 
     """
     return self.substitute(m,"SS")
@@ -238,6 +336,16 @@ class SageCNFEncoder(ANF2CNFConverter):
       the currently processed polynomial.
 
     OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
+
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c> = BooleanPolynomialRing()
+      sage: enc = SageCNFEncoder(DIMACS(),R)
+      sage: enc.p_lps(a*b,enc.homogeneous_parts(a*b + a*c + a + b + 1))
+      4
+      sage: enc.phi
+      [None, a, b, c, a*b + a]
 
     """
     if 1 in hom_parts.keys():
@@ -262,13 +370,23 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
 
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c> = BooleanPolynomialRing()
+      sage: enc = SageCNFEncoder(DIMACS(),R)
+      sage: enc.p_dps(a*b,enc.homogeneous_parts(a*b + a*c + a + b + 1))
+      4
+      sage: enc.phi
+      [None, a, b, c, a*b + a + b + 1]
+
     """
     if 0 in hom_parts.keys() and 1 in hom_parts.keys():
       v = m.variables()
-      if v[0] in hom_parts[1] and v[1] in hom_parts[1] and self.one in hom_parts[0]:
+      if v[0] in hom_parts[1] and v[1] in hom_parts[1] and self._one in hom_parts[0]:
         hom_parts[1].remove(v[0])
         hom_parts[1].remove(v[1])
-        hom_parts[0].remove(self.one)
+        hom_parts[0].remove(self._one)
         return self.substitute(m+v[0]+v[1]+1,"DPS")
     else:
       return self.p_lps(m,hom_parts)
@@ -285,10 +403,20 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
 
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c> = BooleanPolynomialRing()
+      sage: enc = SageCNFEncoder(DIMACS(),R)
+      sage: enc.p_qps(a*b,enc.homogeneous_parts(a*b + a*c + a + b + 1))
+      4
+      sage: enc.phi
+      [None, a, b, c, a*b + a*c]
+
     """
     for t in hom_parts[2]:
-      x = m.gcd(t)
-      if x != 1:
+      # TODO: calculate the remainder below with the help of the division algorithm
+      if len(set(t.variables()).intersection(set(m.variables()))) == 1:  
         hom_parts[2].remove(t)
         return self.substitute(m+t,"QPS")
     return self.substitute(m,"SS")
@@ -305,10 +433,20 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
 
+    EXAMPLES:
+
+      sage: from sage.sat.solvers.dimacs import DIMACS
+      sage: R.<a,b,c,d> = BooleanPolynomialRing()
+      sage: enc = SageCNFEncoder(DIMACS(),R)
+      sage: enc.p_cps(a*b*c,enc.homogeneous_parts(a*b*c + a*b*d + a + b + 1))
+      5
+      sage: enc.phi
+      [None, a, b, c, d, a*b*c + a*b*d]
+
     """
     for t in hom_parts[3]:
-      x = m.gcd(t)
-      if x.deg() == 2:
+      # TODO: calculate the remainder below with the help of the division algorithm
+      if len(set(t.variables()).intersection(set(m.variables()))) == 2:  
         hom_parts[3].remove(t)
         return self.substitute(m+t,"CPS")
     return self.substitute(m,"SS")
@@ -337,13 +475,12 @@ class SageCNFEncoder(ANF2CNFConverter):
       1 -3 0
       2 -3 0
       -1 -2 3 0
-
-      sage: enc.phi()
+      sage: enc.phi
       [None, a, b, None]
 
     """
     l = []
-    t = [self.phi().index(x) for x in f.variables()]
+    t = [self.phi.index(x) for x in f.variables()]
     for w in t:
       self.solver.add_clause((w,-v))
       l.append(-w)
@@ -373,13 +510,12 @@ class SageCNFEncoder(ANF2CNFConverter):
       1 -3 0
       -2 -3 0
       -1 2 3 0
-
-      sage: enc.phi()
+      sage: enc.phi
       [None, a, b, None]
 
     """
-    p = self.phi().index(f-f.lm())
-    q = self.phi().index(f.lm()/(f-f.lm()))
+    p = self.phi.index(f-f.lm())
+    q = self.phi.index(f.lm()/(f-f.lm()))
     self.solver.add_clause((p,-v))
     self.solver.add_clause((-q,-v))
     self.solver.add_clause((-p,q,v))
@@ -408,15 +544,14 @@ class SageCNFEncoder(ANF2CNFConverter):
       -1 -3 0
       -2 -3 0
       1 2 3 0
-
-      sage: enc.phi()
+      sage: enc.phi
       [None, a, b, None]
 
     """
     w = f.variables()
-    self.solver.add_clause((-self.phi().index(w[0]),-v))
-    self.solver.add_clause((-self.phi().index(w[1]),-v))
-    self.solver.add_clause((self.phi().index(w[0]),self.phi().index(w[1]),v))
+    self.solver.add_clause((-self.phi.index(w[0]),-v))
+    self.solver.add_clause((-self.phi.index(w[1]),-v))
+    self.solver.add_clause((self.phi.index(w[0]),self.phi.index(w[1]),v))
 
   def c_qps(self,f,v):
     """
@@ -446,14 +581,13 @@ class SageCNFEncoder(ANF2CNFConverter):
       -2 -3 -4 0
       -1 -2 3 4 0
       -1 2 -3 4 0
-
-      sage: enc.phi()
+      sage: enc.phi
       [None, a, b, c, None]
 
     """
     t = list(f)
-    p = self.phi().index(t[0].gcd(t[1]))
-    w = [self.phi().index(x) for x in f.variables()]
+    p = self.phi.index(t[0].gcd(t[1]))
+    w = [self.phi.index(x) for x in f.variables()]
     w.remove(p)
     self.solver.add_clause((p,-v))
     self.solver.add_clause(( w[0], w[1],-v))
@@ -490,14 +624,13 @@ class SageCNFEncoder(ANF2CNFConverter):
       -3 -4 -5 0
       -1 -2 -3 4 5 0
       -1 -2 3 -4 5 0
-
-      sage: enc.phi()
+      sage: enc.phi
       [None, a, b, c, d, None]
 
     """
     t = list(f)
-    p = [self.phi().index(x) for x in (t[0].gcd(t[1])).variables()]
-    w = [self.phi().index(x) for x in f.variables()]
+    p = [self.phi.index(x) for x in (t[0].gcd(t[1])).variables()]
+    w = [self.phi.index(x) for x in f.variables()]
     w.remove(p[0])
     w.remove(p[1])
     self.solver.add_clause((p[0],-v))
@@ -507,7 +640,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     self.solver.add_clause((-p[0],-p[1],-w[0], w[1],v))
     self.solver.add_clause((-p[0],-p[1], w[0],-w[1],v))
 
-  def linearized(self,f):
+  def lin_to_clauses(self,f):
     """
     Converts the linearized polynomial ``f`` to its logical representation
     either with normal CNF or XOR clauses.
@@ -525,7 +658,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       sage: fn = tmp_filename()
       sage: solver = DIMACS(filename=fn)
       sage: enc = SageCNFEncoder(solver,R,cutting_number=4,use_xor_clauses=False)
-      sage: enc.linearized([1,2,3,4])
+      sage: enc.lin_to_clauses([1,2,3,4])
       sage: _ = solver.write()
       sage: print open(fn).read()
       p cnf 4 8
@@ -542,7 +675,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       sage: fn = tmp_filename()
       sage: solver = DIMACS(filename=fn)
       sage: enc = SageCNFEncoder(solver,R,cutting_number=4,use_xor_clauses=False)
-      sage: enc.linearized([0,1,2,3,4])
+      sage: enc.lin_to_clauses([0,1,2,3,4])
       sage: _ = solver.write()
       sage: print open(fn).read()
       p cnf 4 8
@@ -560,7 +693,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat               # optional - cryptominisat
       sage: solver = CryptoMiniSat()                                               # optional - cryptominisat
       sage: enc = SageCNFEncoder(solver,R,use_xor_clauses=True)                    # optional - cryptominisat
-      sage: enc.linearized([1,2,3,4])                                              # optional - cryptominisat
+      sage: enc.lin_to_clauses([1,2,3,4])                                          # optional - cryptominisat
       sage: solver()                                                               # optional - cryptominisat
       (None, False, False, True, False)
       sage: print(solver)                                                          # optional - cryptominisat
@@ -571,7 +704,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat               # optional - cryptominisat
       sage: solver = CryptoMiniSat()                                               # optional - cryptominisat
       sage: enc = SageCNFEncoder(solver,R,use_xor_clauses=True)                    # optional - cryptominisat
-      sage: enc.linearized([0,1,2,3,4])                                            # optional - cryptominisat
+      sage: enc.lin_to_clauses([0,1,2,3,4])                                        # optional - cryptominisat
       sage: solver()                                                               # optional - cryptominisat
       (None, False, True, False, False)
       sage: print(solver)                                                          # optional - cryptominisat
