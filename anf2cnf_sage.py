@@ -31,7 +31,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``cutting_number`` - integer (default: 4) maximum length of XOR chains after
       splitting if XOR clauses are not supported.  Supported values are 3,...,6.
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c,d> = BooleanPolynomialRing()
@@ -87,38 +87,44 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``cstrategy`` - string (default: "SS") sets the cubic substitution
       strategy that should be used. 
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c,d> = BooleanPolynomialRing()
       sage: L = [a*b*c + a*c*d + b*c + b + c + d + 1, b*c + c*d + b]
 
     Standard substitution::
+
       sage: enc = SageCNFEncoder(DIMACS(), R)
       sage: enc(L)
       [None, a, b, c, d, a*b*c, a*c*d, b*c, None, c*d]
       
     Linear partner substitution::
+    
       sage: enc = SageCNFEncoder(DIMACS(), R)
       sage: enc(L, qstrategy="LPS")
       [None, a, b, c, d, a*b*c, a*c*d, b*c + b, None, c*d] 
 
     Double partner substitution::
+
       sage: enc = SageCNFEncoder(DIMACS(), R)
       sage: enc(L, qstrategy="DPS")
       [None, a, b, c, d, a*b*c, a*c*d, b*c + b + c + 1, b*c + b, c*d] 
 
     Quadratic partner substitution::
+
       sage: enc = SageCNFEncoder(DIMACS(), R)
       sage: enc(L, qstrategy="QPS")
       [None, a, b, c, d, a*b*c, a*c*d, b*c, None, b*c + c*d]
 
     Cubic partner substitution::
+
       sage: enc = SageCNFEncoder(DIMACS(), R)
       sage: enc(L, cstrategy="CPS")
       [None, a, b, c, d, a*b*c + a*c*d, b*c, None, c*d]
 
     Standard substitution (XOR)::
+
       sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat          # optional - cryptominisat 
       sage: solver = CryptoMiniSat()                                          # optional - cryptominisat
       sage: enc = SageCNFEncoder(solver, R, use_xor_clauses=True)             # optional - cryptominisat
@@ -147,7 +153,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       polynomial.
     - ``decision`` - is this variable a deicison variable?
 
-    EXAMPLE:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c> = BooleanPolynomialRing()
@@ -164,7 +170,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     """
     Map SAT variables to polynomial variables.
 
-    EXAMPLE:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c> = BooleanPolynomialRing()
@@ -191,7 +197,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``cstrategy`` - string (default: "SS") sets the cubic substitution
       strategy that should be used. 
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c> = BooleanPolynomialRing()
@@ -245,7 +251,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     OUTPUT: A dictionary h, where h[deg] returns a list containing all the
     monomials m of f where m.deg() == deg.
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c> = BooleanPolynomialRing()
@@ -274,7 +280,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: An index for a SAT variable corresponding to ``f``.
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c> = BooleanPolynomialRing()
@@ -309,7 +315,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c> = BooleanPolynomialRing()
@@ -337,7 +343,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c> = BooleanPolynomialRing()
@@ -370,7 +376,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c> = BooleanPolynomialRing()
@@ -403,7 +409,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c> = BooleanPolynomialRing()
@@ -433,7 +439,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c,d> = BooleanPolynomialRing()
@@ -461,7 +467,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``f`` - a :cls:`BooleanPolynomial`.
     - ``v`` - boolean variable that was used for substituting ``f``.
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b> = BooleanPolynomialRing()
@@ -496,7 +502,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``f`` - a :cls:`BooleanPolynomial`
     - ``v`` - boolean variable that was used for substituting ``f``.
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b> = BooleanPolynomialRing()
@@ -530,7 +536,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``f`` - a :cls:`BooleanPolynomial`.
     - ``v`` - boolean variable that was used for substituting ``f``.
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b> = BooleanPolynomialRing()
@@ -565,7 +571,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``f`` - a :cls:`BooleanPolynomial`.
     - ``v`` - boolean variable that was used for substituting ``f``.
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c> = BooleanPolynomialRing()
@@ -607,7 +613,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     - ``f`` - a :cls:`BooleanPolynomial`.
     - ``v`` - boolean variable that was used for substituting ``f``.
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R.<a,b,c,d> = BooleanPolynomialRing()
@@ -649,12 +655,13 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     - ``f`` - list of index integers representing the linearized polynomial.
 
-    EXAMPLES: 
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R = BooleanPolynomialRing(4,'x')
 
     First lets convert the polynomial x[0] + x[1] + x[2] + x[3]:: 
+
       sage: fn = tmp_filename()
       sage: solver = DIMACS(filename=fn)
       sage: enc = SageCNFEncoder(solver,R,cutting_number=4,use_xor_clauses=False)
@@ -672,6 +679,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       1 -2 -3 -4 0
 
     Now we convert the polynomial x[0] + x[1] + x[2] + x[3] + 1::
+
       sage: fn = tmp_filename()
       sage: solver = DIMACS(filename=fn)
       sage: enc = SageCNFEncoder(solver,R,cutting_number=4,use_xor_clauses=False)
@@ -690,6 +698,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     
     # TODO: improve the tests below!
     And now the same with XOR clauses. First x[0] + x[1] + x[2] + x[3]::
+
       sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat               # optional - cryptominisat
       sage: solver = CryptoMiniSat()                                               # optional - cryptominisat
       sage: enc = SageCNFEncoder(solver,R,use_xor_clauses=True)                    # optional - cryptominisat
@@ -701,6 +710,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       #vars:       4, #lits:       4, #clauses:       1, #learnt:       0, #assigns:       0
 
     Second x[0] + x[1] + x[2] + x[3] + 1::
+
       sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat               # optional - cryptominisat
       sage: solver = CryptoMiniSat()                                               # optional - cryptominisat
       sage: enc = SageCNFEncoder(solver,R,use_xor_clauses=True)                    # optional - cryptominisat
@@ -749,7 +759,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     g (with len(support(g) <= cutting_number) that was broken off the polynomial
     ``f``.
 
-    EXAMPLES: 
+    EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
       sage: R = BooleanPolynomialRing(5,'x')
@@ -798,7 +808,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     OUTPUT: A list of clauses modeling the polynomial ``f``.
 
-    EXAMPLES:
+    EXAMPLES::
 
       sage: R.<a> = BooleanPolynomialRing()
       sage: from sage.sat.solvers.dimacs import DIMACS
