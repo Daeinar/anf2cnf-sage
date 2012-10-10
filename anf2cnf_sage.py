@@ -1,5 +1,6 @@
 """
-ANF to CNF Converter supporting different conversion strategies.
+Algebraic Normal Form (ANF) to Conjunctive Normal Form (CNF) converter
+supporting different conversion strategies.
 
 AUTHORS: 
 
