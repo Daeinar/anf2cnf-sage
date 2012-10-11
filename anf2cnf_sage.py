@@ -55,7 +55,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     """
     # TODO: check user parameters
-    assert(cutting_number in xrange(3,7))
+    assert(cutting_number in xrange(3,8))
 
     self.create_subpolys = {"SS": self.p_ss, "LPS": self.p_lps, \
         "DPS": self.p_dps, "QPS": self.p_qps, "CPS": self.p_cps}
@@ -65,7 +65,6 @@ class SageCNFEncoder(ANF2CNFConverter):
     self.solver = solver
     self.ring = ring
     self._one = self.ring.one() 
-    self._zero = self.ring.zero() 
     if use_xor_clauses is not False:
       use_xor_clauses = hasattr(solver,"add_xor_clause")
     self.use_xor_clauses = use_xor_clauses
@@ -863,12 +862,11 @@ class SageCNFEncoder(ANF2CNFConverter):
     """
 
     # binomial(len(f),k)
-    # TODO: generate the indices once as soon as the cutting length is known, i.e. when 
-    # the converter is initialized
     for k in ifilterfalse(lambda x: x%2==t, xrange(len(f)+1)):
+      # TODO: generate the combinations once when the convert is inititalized and save
+      # it to a dictionary
       for indices in combinations(xrange(len(f)),k):
         g = list(f)
         for i in indices:
           g[i] = -g[i]
-        # write it to the solver instead of saving it to a list
         self.solver.add_clause(tuple(g)) 
