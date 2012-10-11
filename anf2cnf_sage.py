@@ -762,18 +762,6 @@ class SageCNFEncoder(ANF2CNFConverter):
     EXAMPLES::
 
       sage: from sage.sat.solvers.dimacs import DIMACS
-      sage: R = BooleanPolynomialRing(5,'x')
-      sage: solver = DIMACS()
-      sage: enc = SageCNFEncoder(solver,R,cutting_number=4)
-      sage: enc.split([1,2,3,4,5])
-      [[1, 2, 3, 6], [6, 4, 5]]
-      
-      sage: R = BooleanPolynomialRing(6, 'x')
-      sage: solver = DIMACS()
-      sage: enc = SageCNFEncoder(solver,R,cutting_number=4)
-      sage: enc.split([1,2,3,4,5,6])
-      [[1, 2, 3, 7], [7, 4, 5, 6]]
-
       sage: R = BooleanPolynomialRing(7, 'x')
       sage: solver = DIMACS()
       sage: enc = SageCNFEncoder(solver,R,cutting_number=4)
