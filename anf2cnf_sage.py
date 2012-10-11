@@ -1,6 +1,6 @@
 """
-Algebraic Normal Form (ANF) to Conjunctive Normal Form (CNF) converter
-supporting different conversion strategies.
+Algebraic Normal Form (ANF) to Conjunctive Normal Form (CNF) converter with
+support for different conversion strategies.
 
 AUTHORS: 
 
@@ -15,6 +15,7 @@ AUTHORS:
 ##############################################################################
 
 from sage.sat.converters import ANF2CNFConverter
+from itertools import combinations, ifilterfalse
 
 class SageCNFEncoder(ANF2CNFConverter):
   """
@@ -212,8 +213,8 @@ class SageCNFEncoder(ANF2CNFConverter):
       1 -4 0
       2 -4 0
       -1 -2 4 0
-      -4 -3 0
       4 3 0
+      -4 -3 0
 
     """
     # TODO: chekc parameters
@@ -724,12 +725,14 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     """
     equal_zero = True
-    if 0 in f:
+    if 0 in f: # note '0' here corresponds to the constant +1
       equal_zero = False
       f.remove(0)
+
     # XOR clauses
     if self.use_xor_clauses:
-      if equal_zero:
+      #if equal_zero:
+      if t == 0:
         f[0] = -f[0]
       self.solver.add_xor_clause(tuple(f),False)
     # CNF clauses
@@ -738,14 +741,11 @@ class SageCNFEncoder(ANF2CNFConverter):
         l = self.split(f)
       else:
         l = [f]
-      clauses = []
       for i in xrange(len(l)):
         if i == len(l) - 1 and not equal_zero:
-          clauses += self.c_lin_cnf(l[i],equal_zero)
+          self.c_lin_cnf(l[i],1)
         else:
-          clauses += self.c_lin_cnf(l[i],True)
-      for c in clauses:
-        self.solver.add_clause(c)
+          self.c_lin_cnf(l[i],0)
 
   def split(self,f):
     """
@@ -798,223 +798,77 @@ class SageCNFEncoder(ANF2CNFConverter):
         break
     return l
 
-  def c_lin_cnf(self,f,equal_zero):
+
+  def c_lin_cnf(self,f,t):
     """
     CNF clauses for a linearized polynomial.
 
     INPUT: 
 
     - ``f`` - list of integers represeting a linearized polynomial.
-    - ``equal_zero`` - boolean, true if f = 0 and false if f + 1 = 0.
-
-    OUTPUT: A list of clauses modeling the polynomial ``f``.
+    - ``t`` - integer, t == 0 iif f = 0 and t == 1 iif f + 1 = 0.
 
     EXAMPLES::
 
-      sage: R.<a> = BooleanPolynomialRing()
       sage: from sage.sat.solvers.dimacs import DIMACS
-      sage: solver = DIMACS()
-      sage: enc = SageCNFEncoder(solver,R)
+      sage: R = BooleanPolynomialRing(5, 'x')
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R,cutting_number=5)
+      sage: enc.c_lin_cnf([1,2,3,4,5], 0)
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 5 16
+      -1 2 3 4 5 0
+      1 -2 3 4 5 0
+      1 2 -3 4 5 0
+      1 2 3 -4 5 0
+      1 2 3 4 -5 0
+      -1 -2 -3 4 5 0
+      -1 -2 3 -4 5 0
+      -1 -2 3 4 -5 0
+      -1 2 -3 -4 5 0
+      -1 2 -3 4 -5 0
+      -1 2 3 -4 -5 0
+      1 -2 -3 -4 5 0
+      1 -2 -3 4 -5 0
+      1 -2 3 -4 -5 0
+      1 2 -3 -4 -5 0
+      -1 -2 -3 -4 -5 0
 
-      sage: enc.c_lin_cnf([1,2], False)
-      [(-1, -2), (1, 2)]
-      sage: enc.c_lin_cnf([1,2], True)
-      [(1, -2), (-1, 2)] 
-
-      sage: enc.c_lin_cnf([1,2,3], False)
-      [(1, 2, 3), (-1, -2, 3), (-1, 2, -3), (1, -2, -3)]
-
-      sage: enc.c_lin_cnf([1,2,3], True)
-      [(-1, 2, 3), (1, -2, 3), (-1, 2, -3), (-1, -2, -3)]
-
-      sage: enc.c_lin_cnf([1,2,3,4], False)
-      [(1, 2, 3, 4), (-1, -2, 3, 4), (-1, 2, -3, 4), (-1, 2, 3, -4),
-       (1, -2, -3, 4), (1, -2, 3, -4), (1, 2, -3, -4), (-1, -2, -3, -4)]
-
-      sage: enc.c_lin_cnf([1,2,3,4], True)
-      [(-1, 2, 3, 4), (1, -2, 3, 4), (1, 2, -3, 4), (1, 2, 3, -4),
-       (-1, -2, -3, 4), (-1, -2, 3, -4), (-1, 2, -3, -4), (1, -2, -3, -4)]
-
-      sage: enc.c_lin_cnf([1,2,3,4,5], False)
-      [(1, 2, 3, 4, 5), (-1, -2, 3, 4, 5), (-1, 2, -3, 4, 5), (-1, 2, 3, -4, 5),
-       (-1, 2, 3, 4, -5), (1, -2, -3, 4, 5), (1, -2, 3, -4, 5), (1, -2, 3, 4, -5),
-       (1, 2, -3, -4, 5), (1, 2, -3, 4, -5), (1, 2, 3, -4, -5), (-1, -2, -3, -4, 5),
-       (-1, -2, -3, 4, -5), (-1, -2, 3, -4, -5), (-1, 2, -3, -4, -5), (1, -2, -3, -4, -5)]
-
-      sage: enc.c_lin_cnf([1,2,3,4,5], True)
-      [(-1, 2, 3, 4, 5), (1, -2, 3, 4, 5), (1, 2, -3, 4, 5), (1, 2, 3, -4, 5),
-       (1, 2, 3, 4, -5), (-1, -2, -3, 4, 5), (-1, -2, 3, -4, 5), (-1, -2, 3, 4, -5),
-       (-1, 2, -3, 4, -5), (-1, 2, 3, -4, -5), (-1, 2, -3, -4, 5), (1, -2, 3, -4, -5),
-       (1, 2, -3, -4, -5), (1, -2, -3, 4, -5), (1, -2, -3, -4, 5), (-1, -2, -3, -4, -5)]
-
-      sage: enc.c_lin_cnf([1,2,3,4,5,6], False)
-      [(1, 2, 3, 4, 5, 6), (-1, -2, 3, 4, 5, 6), (-1, 2, -3, 4, 5, 6), (-1, 2, 3, -4, 5, 6),
-       (-1, 2, 3, 4, -5, 6), (-1, 2, 3, 4, 5, -6), (1, -2, -3, 4, 5, 6), (1, -2, 3, -4, 5, 6),
-       (1, -2, 3, 4, -5, 6), (1, -2, 3, 4, 5, -6), (1, 2, -3, -4, 5, 6), (1, 2, -3, 4, -5, 6),
-       (1, 2, -3, 4, 5, -6), (1, 2, 3, -4, -5, 6), (1, 2, 3, -4, 5, -6), (1, 2, 3, 4, -5, -6),
-       (-1, -2, -3, -4, 5, 6), (-1, -2, -3, 4, -5, 6), (-1, -2, 3, -4, -5, 6), (-1, 2, -3, -4, -5, 6),
-       (1, -2, -3, -4, -5, 6), (-1, -2, -3, 4, 5, -6), (-1, -2, 3, -4, 5, -6), (-1, 2, -3, -4, 5, -6),
-       (1, -2, -3, -4, 5, -6), (-1, -2, 3, 4, -5, -6), (-1, 2, -3, 4, -5, -6), (1, -2, -3, 4, -5, -6),
-       (-1, 2, 3, -4, -5, -6), (1, -2, 3, -4, -5, -6), (1, 2, -3, -4, -5, -6), (-1, -2, -3, -4, -5, -6)]
-
-      sage: enc.c_lin_cnf([1,2,3,4,5,6], True)
-      [(-1, 2, 3, 4, 5, 6), (1, -2, 3, 4, 5, 6), (1, 2, -3, 4, 5, 6), (1, 2, 3, -4, 5, 6),
-       (1, 2, 3, 4, -5, 6), (1, 2, 3, 4, 5, -6), (-1, -2, -3, 4, 5, 6), (-1, -2, 3, -4, 5, 6),
-       (-1, -2, 3, 4, -5, 6), (-1, -2, 3, 4, 5, -6), (-1, 2, -3, -4, 5, 6), (-1, 2, -3, 4, -5, 6),
-       (-1, 2, -3, 4, 5, -6), (-1, 2, 3, -4, -5, 6), (-1, 2, 3, -4, 5, -6), (-1, 2, 3, 4, -5, -6),
-       (1, -2, -3, -4, 5, 6), (1, -2, -3, 4, -5, 6), (1, -2, -3, 4, 5, -6), (1, -2, 3, -4, -5, 6),
-       (1, -2, 3, -4, 5, -6), (1, -2, 3, 4, -5, -6), (1, 2, -3, -4, -5, 6), (1, 2, -3, -4, 5, -6),
-       (-1, 2, -3, 4, -5, -6), (-1, 2, 3, -4, -5, -6), (-1, -2, -3, -4, -5, 6), (-1, -2, -3, -4, 5, -6),
-       (-1, -2, -3, 4, -5, -6), (-1, -2, 3, -4, -5, -6), (-1, 2, -3, -4, -5, -6), (1, -2, -3, -4, -5, -6)]
+      sage: fn = tmp_filename()
+      sage: solver = DIMACS(filename=fn)
+      sage: enc = SageCNFEncoder(solver,R,cutting_number=5)
+      sage: enc.c_lin_cnf([1,2,3,4,5],1)
+      sage: _ = solver.write()
+      sage: print open(fn).read()
+      p cnf 5 16
+      1 2 3 4 5 0
+      -1 -2 3 4 5 0
+      -1 2 -3 4 5 0
+      -1 2 3 -4 5 0
+      -1 2 3 4 -5 0
+      1 -2 -3 4 5 0
+      1 -2 3 -4 5 0
+      1 -2 3 4 -5 0
+      1 2 -3 -4 5 0
+      1 2 -3 4 -5 0
+      1 2 3 -4 -5 0
+      -1 -2 -3 -4 5 0
+      -1 -2 -3 4 -5 0
+      -1 -2 3 -4 -5 0
+      -1 2 -3 -4 -5 0
+      1 -2 -3 -4 -5 0
 
     """
-    c = []
-    # TODO: error checking
 
-    if equal_zero:
-      if len(f) == 2:
-        # x[1] + x[2]
-        c.append((f[0],-f[1]))
-        c.append((-f[0],f[1]))
-      elif len(f) == 3:
-        # x[1] + x[2] + x[3]
-        c.append((-f[0], f[1], f[2]))
-        c.append(( f[0],-f[1], f[2]))
-        c.append((-f[0], f[1],-f[2]))
-        c.append((-f[0],-f[1],-f[2]))
-      elif len(f) == 4:
-        # x[1] + x[2] + x[3] + x[4]
-        c.append((-f[0], f[1], f[2], f[3]))
-        c.append(( f[0],-f[1], f[2], f[3]))
-        c.append(( f[0], f[1],-f[2], f[3]))
-        c.append(( f[0], f[1], f[2],-f[3]))
-        c.append((-f[0],-f[1],-f[2], f[3]))
-        c.append((-f[0],-f[1], f[2],-f[3]))
-        c.append((-f[0], f[1],-f[2],-f[3]))
-        c.append(( f[0],-f[1],-f[2],-f[3]))
-      elif len(f) == 5:
-        # x[1] + x[2] + x[3] + x[4] + x[5]
-        c.append((-f[0], f[1], f[2], f[3], f[4]))
-        c.append(( f[0],-f[1], f[2], f[3], f[4]))
-        c.append(( f[0], f[1],-f[2], f[3], f[4]))
-        c.append(( f[0], f[1], f[2],-f[3], f[4]))
-        c.append(( f[0], f[1], f[2], f[3],-f[4]))
-        c.append((-f[0],-f[1],-f[2], f[3], f[4]))
-        c.append((-f[0],-f[1], f[2],-f[3], f[4]))
-        c.append((-f[0],-f[1], f[2], f[3],-f[4]))
-        c.append((-f[0], f[1],-f[2], f[3],-f[4]))
-        c.append((-f[0], f[1], f[2],-f[3],-f[4]))
-        c.append((-f[0], f[1],-f[2],-f[3], f[4]))
-        c.append(( f[0],-f[1], f[2],-f[3],-f[4]))
-        c.append(( f[0], f[1],-f[2],-f[3],-f[4]))
-        c.append(( f[0],-f[1],-f[2], f[3],-f[4]))
-        c.append(( f[0],-f[1],-f[2],-f[3], f[4]))
-        c.append((-f[0],-f[1],-f[2],-f[3],-f[4]))
-      elif len(f) == 6:
-        # x[1] + x[2] + x[3] + x[4] + x[5] + x[6]
-        c.append((-f[0], f[1], f[2], f[3], f[4], f[5]))
-        c.append(( f[0],-f[1], f[2], f[3], f[4], f[5]))
-        c.append(( f[0], f[1],-f[2], f[3], f[4], f[5]))
-        c.append(( f[0], f[1], f[2],-f[3], f[4], f[5]))
-        c.append(( f[0], f[1], f[2], f[3],-f[4], f[5]))
-        c.append(( f[0], f[1], f[2], f[3], f[4],-f[5]))
-        c.append((-f[0],-f[1],-f[2], f[3], f[4], f[5]))
-        c.append((-f[0],-f[1], f[2],-f[3], f[4], f[5]))
-        c.append((-f[0],-f[1], f[2], f[3],-f[4], f[5]))
-        c.append((-f[0],-f[1], f[2], f[3], f[4],-f[5]))
-        c.append((-f[0], f[1],-f[2],-f[3], f[4], f[5]))
-        c.append((-f[0], f[1],-f[2], f[3],-f[4], f[5]))
-        c.append((-f[0], f[1],-f[2], f[3], f[4],-f[5]))
-        c.append((-f[0], f[1], f[2],-f[3],-f[4], f[5]))
-        c.append((-f[0], f[1], f[2],-f[3], f[4],-f[5]))
-        c.append((-f[0], f[1], f[2], f[3],-f[4],-f[5]))
-        c.append(( f[0],-f[1],-f[2],-f[3], f[4], f[5]))
-        c.append(( f[0],-f[1],-f[2], f[3],-f[4], f[5]))
-        c.append(( f[0],-f[1],-f[2], f[3], f[4],-f[5]))
-        c.append(( f[0],-f[1], f[2],-f[3],-f[4], f[5]))
-        c.append(( f[0],-f[1], f[2],-f[3], f[4],-f[5]))
-        c.append(( f[0],-f[1], f[2], f[3],-f[4],-f[5]))
-        c.append(( f[0], f[1],-f[2],-f[3],-f[4], f[5]))
-        c.append(( f[0], f[1],-f[2],-f[3], f[4],-f[5]))
-        c.append((-f[0], f[1],-f[2], f[3],-f[4],-f[5]))
-        c.append((-f[0], f[1], f[2],-f[3],-f[4],-f[5]))
-        c.append((-f[0],-f[1],-f[2],-f[3],-f[4], f[5]))
-        c.append((-f[0],-f[1],-f[2],-f[3], f[4],-f[5]))
-        c.append((-f[0],-f[1],-f[2], f[3],-f[4],-f[5]))
-        c.append((-f[0],-f[1], f[2],-f[3],-f[4],-f[5]))
-        c.append((-f[0], f[1],-f[2],-f[3],-f[4],-f[5]))
-        c.append(( f[0],-f[1],-f[2],-f[3],-f[4],-f[5]))
-    else:
-      if len(f) == 2:
-        # x[1] + x[2] + 1
-        c.append((-f[0],-f[1]))
-        c.append(( f[0], f[1]))
-      elif len(f) == 3:
-        # x[1] + x[2] + x[3] + 1
-        c.append(( f[0], f[1], f[2]))
-        c.append((-f[0],-f[1], f[2]))
-        c.append((-f[0], f[1],-f[2]))
-        c.append(( f[0],-f[1],-f[2]))
-      elif len(f) == 4:
-        # x[1] + x[2] + x[3] + x[4] + 1
-        c.append(( f[0], f[1], f[2], f[3]))
-        c.append((-f[0],-f[1], f[2], f[3]))
-        c.append((-f[0], f[1],-f[2], f[3]))
-        c.append((-f[0], f[1], f[2],-f[3]))
-        c.append(( f[0],-f[1],-f[2], f[3]))
-        c.append(( f[0],-f[1], f[2],-f[3]))
-        c.append(( f[0], f[1],-f[2],-f[3]))
-        c.append((-f[0],-f[1],-f[2],-f[3]))
-      elif len(f) == 5:
-        # x[1] + x[2] + x[3] + x[4] + x[5] + 1
-        c.append(( f[0], f[1], f[2], f[3], f[4]))
-        c.append((-f[0],-f[1], f[2], f[3], f[4]))
-        c.append((-f[0], f[1],-f[2], f[3], f[4]))
-        c.append((-f[0], f[1], f[2],-f[3], f[4]))
-        c.append((-f[0], f[1], f[2], f[3],-f[4]))
-        c.append(( f[0],-f[1],-f[2], f[3], f[4]))
-        c.append(( f[0],-f[1], f[2],-f[3], f[4]))
-        c.append(( f[0],-f[1], f[2], f[3],-f[4]))
-        c.append(( f[0], f[1],-f[2],-f[3], f[4]))
-        c.append(( f[0], f[1],-f[2], f[3],-f[4]))
-        c.append(( f[0], f[1], f[2],-f[3],-f[4]))
-        c.append((-f[0],-f[1],-f[2],-f[3], f[4]))
-        c.append((-f[0],-f[1],-f[2], f[3],-f[4]))
-        c.append((-f[0],-f[1], f[2],-f[3],-f[4]))
-        c.append((-f[0], f[1],-f[2],-f[3],-f[4]))
-        c.append(( f[0],-f[1],-f[2],-f[3],-f[4]))
-      elif len(f) == 6:
-        # x[1] + x[2] + x[3] + x[4] + x[5] + x[6] + 1
-        c.append(( f[0], f[1], f[2], f[3], f[4], f[5]))
-        c.append((-f[0],-f[1], f[2], f[3], f[4], f[5]))
-        c.append((-f[0], f[1],-f[2], f[3], f[4], f[5]))
-        c.append((-f[0], f[1], f[2],-f[3], f[4], f[5]))
-        c.append((-f[0], f[1], f[2], f[3],-f[4], f[5]))
-        c.append((-f[0], f[1], f[2], f[3], f[4],-f[5]))
-        c.append(( f[0],-f[1],-f[2], f[3], f[4], f[5]))
-        c.append(( f[0],-f[1], f[2],-f[3], f[4], f[5]))
-        c.append(( f[0],-f[1], f[2], f[3],-f[4], f[5]))
-        c.append(( f[0],-f[1], f[2], f[3], f[4],-f[5]))
-        c.append(( f[0], f[1],-f[2],-f[3], f[4], f[5]))
-        c.append(( f[0], f[1],-f[2], f[3],-f[4], f[5]))
-        c.append(( f[0], f[1],-f[2], f[3], f[4],-f[5]))
-        c.append(( f[0], f[1], f[2],-f[3],-f[4], f[5]))
-        c.append(( f[0], f[1], f[2],-f[3], f[4],-f[5]))
-        c.append(( f[0], f[1], f[2], f[3],-f[4],-f[5]))
-        c.append((-f[0],-f[1],-f[2],-f[3], f[4], f[5]))
-        c.append((-f[0],-f[1],-f[2], f[3],-f[4], f[5]))
-        c.append((-f[0],-f[1], f[2],-f[3],-f[4], f[5]))
-        c.append((-f[0], f[1],-f[2],-f[3],-f[4], f[5]))
-        c.append(( f[0],-f[1],-f[2],-f[3],-f[4], f[5]))
-        c.append((-f[0],-f[1],-f[2], f[3], f[4],-f[5]))
-        c.append((-f[0],-f[1], f[2],-f[3], f[4],-f[5]))
-        c.append((-f[0], f[1],-f[2],-f[3], f[4],-f[5]))
-        c.append(( f[0],-f[1],-f[2],-f[3], f[4],-f[5]))
-        c.append((-f[0],-f[1], f[2], f[3],-f[4],-f[5]))
-        c.append((-f[0], f[1],-f[2], f[3],-f[4],-f[5]))
-        c.append(( f[0],-f[1],-f[2], f[3],-f[4],-f[5]))
-        c.append((-f[0], f[1], f[2],-f[3],-f[4],-f[5]))
-        c.append(( f[0],-f[1], f[2],-f[3],-f[4],-f[5]))
-        c.append(( f[0], f[1],-f[2],-f[3],-f[4],-f[5]))
-        c.append((-f[0],-f[1],-f[2],-f[3],-f[4],-f[5]))
-    return c
+    # binomial(len(f),k)
+    # TODO: generate the indices once as soon as the cutting length is known, i.e. when 
+    # the converter is initialized
+    for k in ifilterfalse(lambda x: x%2==t, xrange(len(f)+1)):
+      for indices in combinations(xrange(len(f)),k):
+        g = list(f)
+        for i in indices:
+          g[i] = -g[i]
+        # write it to the solver instead of saving it to a list
+        self.solver.add_clause(tuple(g)) 
