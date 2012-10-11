@@ -14,8 +14,8 @@ AUTHORS:
 #                  http://www.gnu.org/licenses/
 ##############################################################################
 
-from sage.sat.converters import ANF2CNFConverter
 from itertools import combinations, ifilterfalse
+from sage.sat.converters import ANF2CNFConverter
 
 class SageCNFEncoder(ANF2CNFConverter):
   """
@@ -65,11 +65,11 @@ class SageCNFEncoder(ANF2CNFConverter):
     self.solver = solver
     self.ring = ring
     self._one = self.ring.one() 
-    if use_xor_clauses is not False:
-      use_xor_clauses = hasattr(solver,"add_xor_clause")
-    self.use_xor_clauses = use_xor_clauses
     self.cutting_number = cutting_number
     self._phi = [None] 
+    if use_xor_clauses is True:
+      use_xor_clauses = hasattr(solver,"add_xor_clause")
+    self.use_xor_clauses = use_xor_clauses
 
     for x in sorted([x.lm() for x in self.ring.gens()], key=lambda x: x.index()):
       self.var(x)
@@ -216,7 +216,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       -4 -3 0
 
     """
-    # TODO: chekc parameters
+    # TODO: check parameters
     assert(qstrategy in ["SS","LPS","DPS","QPS"]) 
     assert(cstrategy in ["SS","CPS"])
 
@@ -226,7 +226,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       while len(hom_parts[deg]) != 0:
         m = hom_parts[deg].pop(0)
         if deg == 0:
-          # Note: Index 0 corresponds to the constant coefficient 1!
+          # Note: Index 0 corresponds to the constant coefficient +1!
           sub_var = self.phi.index(None)
         elif deg == 1:
           sub_var = self.phi.index(m) 
@@ -422,7 +422,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     """
     for t in hom_parts[2]:
-      # TODO: calculate the remainder below with the help of the division algorithm
+      # TODO: Calculate the remainder below with the help of the division algorithm.
       if len(set(t.variables()).intersection(set(m.variables()))) == 1:  
         hom_parts[2].remove(t)
         return self.substitute(m+t,"QPS")
@@ -452,7 +452,7 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     """
     for t in hom_parts[3]:
-      # TODO: calculate the remainder below with the help of the division algorithm
+      # TODO: Calculate the remainder below with the help of the division algorithm.
       if len(set(t.variables()).intersection(set(m.variables()))) == 2:  
         hom_parts[3].remove(t)
         return self.substitute(m+t,"CPS")
@@ -724,14 +724,14 @@ class SageCNFEncoder(ANF2CNFConverter):
 
     """
     equal_zero = True
-    if 0 in f: # note '0' here corresponds to the constant +1
+    # Note: The entry '0' here corresponds to the constant +1.
+    if 0 in f: 
       equal_zero = False
       f.remove(0)
 
     # XOR clauses
     if self.use_xor_clauses:
-      #if equal_zero:
-      if t == 0:
+      if equal_zero:
         f[0] = -f[0]
       self.solver.add_xor_clause(tuple(f),False)
     # CNF clauses
@@ -797,7 +797,6 @@ class SageCNFEncoder(ANF2CNFConverter):
         break
     return l
 
-
   def c_lin_cnf(self,f,t):
     """
     CNF clauses for a linearized polynomial.
@@ -805,7 +804,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     INPUT: 
 
     - ``f`` - list of integers represeting a linearized polynomial.
-    - ``t`` - integer, t == 0 iif f = 0 and t == 1 iif f + 1 = 0.
+    - ``t`` - integer with t == 0 iif f = 0 and t == 1 iif f + 1 = 0.
 
     EXAMPLES::
 
@@ -814,7 +813,7 @@ class SageCNFEncoder(ANF2CNFConverter):
       sage: fn = tmp_filename()
       sage: solver = DIMACS(filename=fn)
       sage: enc = SageCNFEncoder(solver,R,cutting_number=5)
-      sage: enc.c_lin_cnf([1,2,3,4,5], 0)
+      sage: enc.c_lin_cnf([1,2,3,4,5],0)
       sage: _ = solver.write()
       sage: print open(fn).read()
       p cnf 5 16
@@ -859,14 +858,22 @@ class SageCNFEncoder(ANF2CNFConverter):
       -1 2 -3 -4 -5 0
       1 -2 -3 -4 -5 0
 
-    """
+    .. NOTE::
 
-    # binomial(len(f),k)
+        To compute the clauses for a linear polynomial f of length n we enumerate
+        all k-combinations for a set with n elements. The k-combinations then show
+        us where to set the minus when constructing a clause. There are four
+        cases to distinguish: 
+        f = 0 and n%2 = 0: enumerate binomial(n,1), ..., binomial(n,2*i+1), ..., binomial(n,n-1)
+        f = 0 and n%2 = 1: enumerate binomial(n,1), ..., binomial(n,2*i+1), ..., binomial(n,n)
+        f = 1 and n%2 = 0: enumerate binomial(n,0), ..., binomial(n,2*i  ), ..., binomial(n,n)
+        f = 1 and n%2 = 1: enumerate binomial(n,0), ..., binomial(n,2*i  ), ..., binomial(n,n-2)
+
+    """
     for k in ifilterfalse(lambda x: x%2==t, xrange(len(f)+1)):
-      # TODO: generate the combinations once when the convert is inititalized and save
-      # it to a dictionary
       for indices in combinations(xrange(len(f)),k):
         g = list(f)
         for i in indices:
           g[i] = -g[i]
         self.solver.add_clause(tuple(g)) 
+
