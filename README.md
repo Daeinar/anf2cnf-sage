@@ -10,12 +10,12 @@ normal form ([ANF][2]) into a logical formula in conjunctive normal form
 ([CNF][3]). 
 
 #### FEATURES
-* Support for different clause types: 
-  - DIMACS
-  - XOR (for more details see the [cryptominisat homepage][4])
 * Variety of term substitution strategies, for more details please see the
   following [paper][5]. On request a copy of the paper can be sent to the
   interested reader.
+* Support for different clause types: 
+  - DIMACS
+  - XOR (for more details see the [cryptominisat homepage][4])
 
 #### REQUIREMENTS
 [SAGE][6] v5.3 or later.
