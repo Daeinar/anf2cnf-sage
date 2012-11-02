@@ -1,26 +1,38 @@
 ### Algebraic Normal Form (ANF) to Conjunctive Normal Form (CNF) Converter (SAGE version).
 
 #### LICENSE
-This program is free software; see [LICENSE](https://github.com/Daeinar/anf2cnf-sage/blob/master/LICENSE) for more details.
+---
+This program is free software; see
+[LICENSE](https://github.com/Daeinar/anf2cnf-sage/blob/master/LICENSE) for more
+details.
 
 #### FUNCTIONALITY
+---
 Converts a multivariate polynomial system over the finite field F2 in algebraic
-normal form (ANF) into a logical formula in conjunctive normal form (CNF). 
+normal form ([ANF](https://en.wikipedia.org/wiki/Algebraic_normal_form)) into a
+logical formula in conjunctive normal form
+([CNF](https://en.wikipedia.org/wiki/Conjunctive_normal_form)). 
 
 #### FEATURES
+---
 * Support for different clause types: 
   - DIMACS
   - XOR (see the [cryptominisat homepage][1] for more details)
-* Variety of term substitution strategies, for more details please [see][2].
-  On request a copy of the above paper can be sent to the interested reader.
+* Variety of term substitution strategies, for more details please see the
+  following [paper][2]. On request a copy of the paper can be sent to the
+  interested reader.
 
 #### REQUIREMENTS
+---
 [SAGE][3] v5.3 or later.
 
 #### USAGE & EXAMPLES
-See doctests in [anf2cnf_sage.py](https://github.com/Daeinar/anf2cnf-sage/blob/master/anf2cnf_sage.py).
+---
+See doctests in
+[anf2cnf_sage.py](https://github.com/Daeinar/anf2cnf-sage/blob/master/anf2cnf_sage.py).
 
 #### CONTACT
+---
 For any questions you can contact Philipp Jovanovic via: <jovanovi@fim.uni-passau.de>
 
 [1]: http://www.msoos.org/xor-clauses
