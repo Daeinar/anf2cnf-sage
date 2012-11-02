@@ -21,8 +21,7 @@ normal form (ANF) into a logical formula in conjunctive normal form (CNF).
 See doctests in [anf2cnf_sage.py](https://github.com/Daeinar/anf2cnf-sage/blob/master/anf2cnf_sage.py).
 
 #### CONTACT
-For any questions you can contact Philipp Jovanovic via:
-<jovanovi at fim dot uni minus passau dot de>  
+For any questions you can contact Philipp Jovanovic via: <jovanovi@fim.uni-passau.de>
 
 [1]: http://www.msoos.org/xor-clauses
 [2]: http://www.degruyter.com/view/j/gcc.2010.2.issue-2/gcc.2010.016/gcc.2010.016.xml
