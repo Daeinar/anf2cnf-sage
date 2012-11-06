@@ -216,27 +216,27 @@ class SageCNFEncoder(ANF2CNFConverter):
       -4 -3 0
 
     """
-    # TODO: check parameters
-    assert(qstrategy in ["SS","LPS","DPS","QPS"]) 
-    assert(cstrategy in ["SS","CPS"])
-
     hom_parts = self.homogeneous_parts(f)
     lin_poly = []
     for deg in hom_parts.keys()[::-1]:
       while len(hom_parts[deg]) != 0:
         m = hom_parts[deg].pop(0)
-        if deg == 0:
-          # Note: Index 0 corresponds to the constant coefficient +1!
-          sub_var = self.phi.index(None)
-        elif deg == 1:
-          sub_var = self.phi.index(m) 
-        elif deg == 2:
-          sub_var = self.create_subpolys[qstrategy](m,hom_parts)
-        elif deg == 3:
-          sub_var = self.create_subpolys[cstrategy](m,hom_parts)
-        else:
-          sub_var = self.create_subpolys["SS"](m,hom_parts)
-        lin_poly.append(sub_var)
+        try:
+          if deg == 0:
+            # Note: Index 0 corresponds to the constant coefficient +1!
+            sub_var = self.phi.index(None)
+          elif deg == 1:
+            sub_var = self.phi.index(m) 
+          elif deg == 2:
+            sub_var = self.create_subpolys[qstrategy](m,hom_parts)
+          elif deg == 3:
+            sub_var = self.create_subpolys[cstrategy](m,hom_parts)
+          else:
+            sub_var = self.create_subpolys["SS"](m,hom_parts)
+          lin_poly.append(sub_var)
+        except KeyError as e:
+          print "Unsupported conversion strategy:", e
+          raise
    
     self.lin_to_clauses(lin_poly)
 
