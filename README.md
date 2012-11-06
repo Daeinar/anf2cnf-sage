@@ -5,7 +5,7 @@
 This program is free software; see [LICENSE][1] for more details.
 
 #### FUNCTIONALITY
-Converts a multivariate polynomial system over the [finite field GF(2)][2] in algebraic
+Converts a multivariate polynomial system over the finite field [GF(2)][2] in algebraic
 normal form ([ANF][3]) into a logical formula in conjunctive normal form
 ([CNF][4]). 
 
