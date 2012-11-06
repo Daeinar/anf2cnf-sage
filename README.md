@@ -11,7 +11,7 @@ normal form ([ANF][3]) into a logical formula in conjunctive normal form
 
 #### FEATURES
 * Variety of term substitution strategies, for more details please see the
-  following [paper][5]. On request a copy of the paper can be sent to the
+  corresponding [paper][5]. On request a copy of the paper can be sent to the
   interested reader.
 * Support for different clause types: 
   - DIMACS
