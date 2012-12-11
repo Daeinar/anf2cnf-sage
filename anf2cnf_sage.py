@@ -31,8 +31,9 @@ class SageCNFEncoder(ANF2CNFConverter):
         - ``ring`` - a :cls:`BooleanPolynomialRing`.
         - ``use_xor_clauses`` - boolean (default: ``False``) use XOR clauses. If
           ``True`` use only if ``solver`` supports it. 
-        - ``cutting_number`` - integer (default: 4) maximum length of XOR chains after
-          splitting if XOR clauses are not supported.  Supported values are 3,...,6.
+        - ``cutting_number`` - integer (default: 4) maximum length of XOR chains
+          after splitting, if XOR clauses are not supported. An arbitrary length
+          is supported. 
   
         EXAMPLES::
     
@@ -55,8 +56,6 @@ class SageCNFEncoder(ANF2CNFConverter):
             [None, a, b, c, d]
   
         """
-        assert(cutting_number in xrange(3,8))
-  
         self.create_subpolys = {"SS": self.p_ss, "LPS": self.p_lps, \
             "DPS": self.p_dps, "QPS": self.p_qps, "CPS": self.p_cps}
         self.create_clauses = {"SS": self.c_ss, "LPS": self.c_lps, \
