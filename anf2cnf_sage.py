@@ -136,7 +136,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     
         """
         for f in F:
-          self.compute_clauses(f,qstrategy,cstrategy)
+          self.convert(f,qstrategy,cstrategy)
         return self.phi
     
     def var(self, m=None, decision=None):
@@ -183,7 +183,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         """
         return(self._phi)
   
-    def compute_clauses(self, f, qstrategy="SS", cstrategy="SS"):
+    def convert(self, f, qstrategy="SS", cstrategy="SS"):
         """
         Convert ``f`` using the quadratic substitution strategy ``qstrategy``and the
         cubic substitution strategy ``cstrategy``. Monomials of degree > 3 are
@@ -204,7 +204,7 @@ class SageCNFEncoder(ANF2CNFConverter):
             sage: fn = tmp_filename()
             sage: solver = DIMACS(filename=fn)
             sage: enc = SageCNFEncoder(solver,R)
-            sage: enc.compute_clauses(a*b + c + 1,"SS","SS")
+            sage: enc.convert(a*b + c + 1,"SS","SS")
             sage: _ = solver.write()
             sage: print open(fn).read()
             p cnf 4 5
