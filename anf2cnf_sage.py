@@ -791,7 +791,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     
         INPUT: 
     
-        - ``f`` - list of integers represeting a linearized polynomial.
+        - ``f`` - list of integers representing a linearized polynomial.
         - ``t`` - integer with t == 0 iif f = 0 and t == 1 iif f + 1 = 0.
     
         EXAMPLES::
