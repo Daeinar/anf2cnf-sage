@@ -21,7 +21,6 @@ class SageCNFEncoder(ANF2CNFConverter):
     """
     ANF to CNF converter supporting different conversion strategies.
     """
-  
     def __init__(self, solver, ring, use_xor_clauses=False, cutting_number=4):
         """
         Construct ANF to CNF converter over ``ring`` passing clauses to ``solver``.
@@ -78,7 +77,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     def __call__(self, F, qstrategy="SS", cstrategy="SS"):
         """
         Encode the boolean polynomials in ``F`` using the quadratic substitution
-        strategy ``qstrategy``and the cubic substitution strategy ``cstrategy``.
+        strategy ``qstrategy`` and the cubic substitution strategy ``cstrategy``.
         Monomials of degree > 3 are substituted using the standard strategy.
     
         INPUT:
@@ -153,7 +152,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     
         - ``m`` - something the new variables maps to, usually a monomial or
           polynomial.
-        - ``decision`` - is this variable a deicison variable?
+        - ``decision`` - is this variable a decision variable?
     
         EXAMPLES::
     
@@ -312,7 +311,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         INPUT:
     
         - ``m`` - a monomial.
-        - ``hom_parts`` - dicitionary that contains all the (remaining) monomials of
+        - ``hom_parts`` - dictionary that contains all the (remaining) monomials of
           the currently processed polynomial.
     
         OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
@@ -340,7 +339,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         INPUT:
     
         - ``m`` - a monomial.
-        - ``hom_parts`` - dicitionary that contains all the (remaining) monomials of
+        - ``hom_parts`` - dictionary that contains all the (remaining) monomials of
           the currently processed polynomial.
     
         OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
@@ -373,7 +372,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         INPUT:
     
         - ``m`` - a monomial.
-        - ``hom_parts`` - dicitionary that contains all the (remaining) monomials of
+        - ``hom_parts`` - dictionary that contains all the (remaining) monomials of
           the currently processed polynomial.
     
         OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
@@ -406,7 +405,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         INPUT:
     
         - ``m`` - a monomial.
-        - ``hom_parts`` - dicitionary that contains all the (remaining) monomials of
+        - ``hom_parts`` - dictionary that contains all the (remaining) monomials of
           the currently processed polynomial.
     
         OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
@@ -421,9 +420,12 @@ class SageCNFEncoder(ANF2CNFConverter):
             sage: enc.phi
             [None, a, b, c, a*b + a*c]
     
+        .. TODO::
+
+            The intersection (i.e. the remainder) should be calculated using the division algorithm.
+
         """
         for t in hom_parts[2]:
-          # TODO: Calculate the remainder below with the help of the division algorithm.
           if len(set(t.variables()).intersection(set(m.variables()))) == 1:  
             hom_parts[2].remove(t)
             return self.substitute(m+t,"QPS")
@@ -436,7 +438,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         INPUT:
     
         - ``m`` - a monomial.
-        - ``hom_parts`` - dicitionary that contains all the (remaining) monomials of
+        - ``hom_parts`` - dictionary that contains all the (remaining) monomials of
           the currently processed polynomial.
     
         OUTPUT: An index for a SAT variable corresponding to ``f``. (see function substitute)
@@ -450,10 +452,13 @@ class SageCNFEncoder(ANF2CNFConverter):
             5
             sage: enc.phi
             [None, a, b, c, d, a*b*c + a*b*d]
+
+        .. TODO::
+
+            The intersection (i.e. the remainder) should be calculated using the division algorithm.
     
         """
         for t in hom_parts[3]:
-          # TODO: Calculate the remainder below with the help of the division algorithm.
           if len(set(t.variables()).intersection(set(m.variables()))) == 2:  
             hom_parts[3].remove(t)
             return self.substitute(m+t,"CPS")
@@ -698,7 +703,6 @@ class SageCNFEncoder(ANF2CNFConverter):
             1 2 -3 -4 0
             -1 -2 -3 -4 0
         
-        # TODO: improve the tests below!
         And now the same with XOR clauses. First x[0] + x[1] + x[2] + x[3]::
     
             sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat               # optional - cryptominisat
@@ -722,6 +726,10 @@ class SageCNFEncoder(ANF2CNFConverter):
             sage: print(solver)                                                          # optional - cryptominisat
             CryptoMiniSat
             #vars:       4, #lits:       4, #clauses:       1, #learnt:       0, #assigns:       0
+
+        .. TODO::
+
+            Improve the last two tests above. 
     
         """
         equal_zero = True
