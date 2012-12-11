@@ -137,7 +137,7 @@ class SageCNFEncoder(ANF2CNFConverter):
     
         """
         for f in F:
-          self.clauses_by_strategy(f,qstrategy,cstrategy)
+          self.compute_clauses(f,qstrategy,cstrategy)
         return self.phi
     
     def var(self, m=None, decision=None):
@@ -184,7 +184,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         """
         return(self._phi)
   
-    def clauses_by_strategy(self, f, qstrategy="SS", cstrategy="SS"):
+    def compute_clauses(self, f, qstrategy="SS", cstrategy="SS"):
         """
         Convert ``f`` using the quadratic substitution strategy ``qstrategy``and the
         cubic substitution strategy ``cstrategy``. Monomials of degree > 3 are
@@ -205,7 +205,7 @@ class SageCNFEncoder(ANF2CNFConverter):
             sage: fn = tmp_filename()
             sage: solver = DIMACS(filename=fn)
             sage: enc = SageCNFEncoder(solver,R)
-            sage: enc.clauses_by_strategy(a*b + c + 1,"SS","SS")
+            sage: enc.compute_clauses(a*b + c + 1,"SS","SS")
             sage: _ = solver.write()
             sage: print open(fn).read()
             p cnf 4 5
@@ -419,10 +419,6 @@ class SageCNFEncoder(ANF2CNFConverter):
             4
             sage: enc.phi
             [None, a, b, c, a*b + a*c]
-    
-        .. TODO::
-
-            The intersection (i.e. the remainder) should be calculated using the division algorithm.
 
         """
         for t in hom_parts[2]:
@@ -452,10 +448,6 @@ class SageCNFEncoder(ANF2CNFConverter):
             5
             sage: enc.phi
             [None, a, b, c, d, a*b*c + a*b*d]
-
-        .. TODO::
-
-            The intersection (i.e. the remainder) should be calculated using the division algorithm.
     
         """
         for t in hom_parts[3]:
