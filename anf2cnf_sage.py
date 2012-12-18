@@ -38,6 +38,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c,d> = BooleanPolynomialRing()
             sage: enc = SageCNFEncoder(DIMACS(), R, cutting_number = 5)
             sage: enc.use_xor_clauses
@@ -48,6 +49,7 @@ class SageCNFEncoder(ANF2CNFConverter):
             [None, a, b, c, d]
     
             sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat       # optional - cryptominisat
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder    # optional - cryptominisat
             sage: R.<a,b,c,d> = BooleanPolynomialRing()                          # optional - cryptominisat
             sage: enc = SageCNFEncoder(CryptoMiniSat(), R, use_xor_clauses=True) # optional - cryptominisat
             sage: enc.use_xor_clauses                                            # optional - cryptominisat
@@ -90,6 +92,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c,d> = BooleanPolynomialRing()
             sage: L = [a*b*c + a*c*d + b*c + b + c + d + 1, b*c + c*d + b]
     
@@ -126,6 +129,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         Standard substitution (XOR)::
     
             sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat          # optional - cryptominisat 
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder       # optional - cryptominisat 
             sage: solver = CryptoMiniSat()                                          # optional - cryptominisat
             sage: enc = SageCNFEncoder(solver, R, use_xor_clauses=True)             # optional - cryptominisat
             sage: enc(L)                                                            # optional - cryptominisat
@@ -156,6 +160,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c> = BooleanPolynomialRing()
             sage: enc = SageCNFEncoder(DIMACS(),R)
             sage: enc.var()
@@ -173,6 +178,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c> = BooleanPolynomialRing()
             sage: enc = SageCNFEncoder(DIMACS(),R)
             sage: enc.var()
@@ -200,6 +206,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c> = BooleanPolynomialRing()
             sage: fn = tmp_filename()
             sage: solver = DIMACS(filename=fn)
@@ -254,6 +261,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c> = BooleanPolynomialRing()
             sage: enc = SageCNFEncoder(DIMACS(),R)
             sage: enc.homogeneous_parts(a*b*c + a*b + a*c + b + c + 1)
@@ -283,6 +291,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c> = BooleanPolynomialRing()
             sage: fn = tmp_filename()
             sage: solver = DIMACS(filename=fn)
@@ -318,6 +327,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c> = BooleanPolynomialRing()
             sage: enc = SageCNFEncoder(DIMACS(),R)
             sage: h = enc.homogeneous_parts(a*b + a*c + a + b + 1)
@@ -346,6 +356,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c> = BooleanPolynomialRing()
             sage: enc = SageCNFEncoder(DIMACS(),R)
             sage: enc.p_lps(a*b,enc.homogeneous_parts(a*b + a*c + a + b + 1))
@@ -379,6 +390,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c> = BooleanPolynomialRing()
             sage: enc = SageCNFEncoder(DIMACS(),R)
             sage: enc.p_dps(a*b,enc.homogeneous_parts(a*b + a*c + a + b + 1))
@@ -412,6 +424,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c> = BooleanPolynomialRing()
             sage: enc = SageCNFEncoder(DIMACS(),R)
             sage: enc.p_qps(a*b,enc.homogeneous_parts(a*b + a*c + a + b + 1))
@@ -441,6 +454,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c,d> = BooleanPolynomialRing()
             sage: enc = SageCNFEncoder(DIMACS(),R)
             sage: enc.p_cps(a*b*c,enc.homogeneous_parts(a*b*c + a*b*d + a + b + 1))
@@ -468,6 +482,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b> = BooleanPolynomialRing()
             sage: fn = tmp_filename()
             sage: solver = DIMACS(filename=fn)
@@ -503,6 +518,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b> = BooleanPolynomialRing()
             sage: fn = tmp_filename()
             sage: solver = DIMACS(filename=fn)
@@ -537,6 +553,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b> = BooleanPolynomialRing()
             sage: fn = tmp_filename()
             sage: solver = DIMACS(filename=fn)
@@ -572,6 +589,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c> = BooleanPolynomialRing()
             sage: fn = tmp_filename()
             sage: solver = DIMACS(filename=fn)
@@ -614,6 +632,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R.<a,b,c,d> = BooleanPolynomialRing()
             sage: fn = tmp_filename()
             sage: solver = DIMACS(filename=fn)
@@ -656,6 +675,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R = BooleanPolynomialRing(4,'x')
     
         First lets convert the polynomial x[0] + x[1] + x[2] + x[3]:: 
@@ -697,6 +717,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         And now the same with XOR clauses. First x[0] + x[1] + x[2] + x[3]::
     
             sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat               # optional - cryptominisat
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder            # optional - cryptominisat
             sage: solver = CryptoMiniSat()                                               # optional - cryptominisat
             sage: enc = SageCNFEncoder(solver,R,use_xor_clauses=True)                    # optional - cryptominisat
             sage: enc.lin_to_clauses([1,2,3,4])                                          # optional - cryptominisat
@@ -709,6 +730,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         Second x[0] + x[1] + x[2] + x[3] + 1::
     
             sage: from sage.sat.solvers.cryptominisat import CryptoMiniSat               # optional - cryptominisat
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder            # optional - cryptominisat
             sage: solver = CryptoMiniSat()                                               # optional - cryptominisat
             sage: enc = SageCNFEncoder(solver,R,use_xor_clauses=True)                    # optional - cryptominisat
             sage: enc.lin_to_clauses([0,1,2,3,4])                                        # optional - cryptominisat
@@ -762,6 +784,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R = BooleanPolynomialRing(7, 'x')
             sage: solver = DIMACS()
             sage: enc = SageCNFEncoder(solver,R,cutting_number=4)
@@ -797,6 +820,7 @@ class SageCNFEncoder(ANF2CNFConverter):
         EXAMPLES::
     
             sage: from sage.sat.solvers.dimacs import DIMACS
+            sage: from sage.sat.converters.anf2cnf_sage import SageCNFEncoder
             sage: R = BooleanPolynomialRing(5, 'x')
             sage: fn = tmp_filename()
             sage: solver = DIMACS(filename=fn)
