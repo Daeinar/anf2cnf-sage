@@ -181,7 +181,7 @@ class SageCNFEncoder(ANF2CNFConverter):
             [None, a, b, c, None]
     
         """
-        return(self._phi)
+        return list(self._phi)
   
     def convert(self, f, qstrategy="SS", cstrategy="SS"):
         """
